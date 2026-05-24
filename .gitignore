@@ -11,5 +11,12 @@ __pycache__/
 Thumbs.db
 .DS_Store
 
+# Data artifacts (generated at runtime)
+data/ohlcv.db
+data/results.json
+
+# Environment / secrets
+.env
+
 # Agent / Gemini internal state
 .agent/
