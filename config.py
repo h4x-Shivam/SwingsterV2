@@ -57,9 +57,18 @@ TOP_N_FINAL = 10               # final ranked output
 # Scoring Weights  (must sum to 1.0)
 # ---------------------------------------------------------------------------
 
-WEIGHT_SIGNAL = 0.45
-WEIGHT_VOLUME = 0.30
-WEIGHT_RR = 0.25
+WEIGHT_SIGNAL = 0.40
+WEIGHT_VOLUME = 0.25
+WEIGHT_RR = 0.20
+WEIGHT_STAGE2 = 0.10
+WEIGHT_RS = 0.05
+
+# ---------------------------------------------------------------------------
+# Stage 2 & Liquidity Filters
+# ---------------------------------------------------------------------------
+
+STAGE2_MIN_SCORE = 60          # minimum stage2_score to proceed with scanning
+MIN_AVG_VOLUME = 50_000        # avg daily volume below this → illiquid, skip
 
 # ---------------------------------------------------------------------------
 # HTTP Headers (for Yahoo Finance requests)
