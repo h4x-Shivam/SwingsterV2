@@ -4,6 +4,7 @@ import os
 import time
 import textwrap
 import pandas as pd
+from collections import Counter
 from scanner.engine import scan_all
 from judge.judge_agent import run_judge, save_top10
 from config import SCAN_MODES, SCAN_MODE, GROQ_API_KEY, GROQ_MODEL
