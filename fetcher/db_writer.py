@@ -106,13 +106,17 @@ def write_ohlcv(
 def read_ohlcv(
     symbol: str,
     db_path: str = DB_PATH,
+    conn: Optional[sqlite3.Connection] = None,
 ) -> list[tuple[str, float, float, float, float, int]]:
     """
     Read all OHLCV rows for a single symbol, ordered by date ascending.
 
     Returns a list of (date, open, high, low, close, volume) tuples.
     """
-    conn = get_connection(db_path)
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_path)
+        should_close = True
     try:
         cursor = conn.execute(
             "SELECT date, open, high, low, close, volume "
@@ -121,7 +125,8 @@ def read_ohlcv(
         )
         return cursor.fetchall()
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
 def get_all_symbols(db_path: str = DB_PATH) -> list[str]:
@@ -134,6 +139,86 @@ def get_all_symbols(db_path: str = DB_PATH) -> list[str]:
         return [row[0] for row in cursor.fetchall()]
     finally:
         conn.close()
+
+
+def get_eligible_symbols(db_path: str = DB_PATH) -> list[str]:
+    """
+    Get all eligible symbols based on four database-level filters:
+    1. Minimum candle count >= 60
+    2. Minimum average volume >= 50,000
+    3. Latest close price >= 20.0
+    4. Data freshness (last trade date within 7 days of UTC 'now')
+    """
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.execute(
+            """
+            SELECT symbol
+            FROM ohlcv
+            GROUP BY symbol
+            HAVING COUNT(date) >= 60
+               AND AVG(volume) >= 50000
+               AND (SELECT close FROM ohlcv o2 WHERE o2.symbol = ohlcv.symbol ORDER BY o2.date DESC LIMIT 1) >= 20.0
+               AND MAX(date) >= date('now', '-7 days')
+            ORDER BY symbol;
+            """
+        )
+        return [row[0] for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
+def get_prefilter_counts(db_path: str = DB_PATH) -> dict:
+    """
+    Returns a dictionary of counts for the pre-filter summary log.
+    We classify the skipped symbols hierarchically to ensure:
+    total = eligible + skipped (short + illiquid + penny + stale)
+    """
+    conn = get_connection(db_path)
+    try:
+        cursor = conn.execute(
+            """
+            SELECT 
+                symbol, 
+                COUNT(date) as cnt, 
+                AVG(volume) as avg_vol, 
+                MAX(date) as max_dt,
+                (SELECT close FROM ohlcv o2 WHERE o2.symbol = ohlcv.symbol ORDER BY o2.date DESC LIMIT 1) as lat_close
+            FROM ohlcv
+            GROUP BY symbol;
+            """
+        )
+        rows = cursor.fetchall()
+        threshold_dt = conn.execute("SELECT date('now', '-7 days');").fetchone()[0]
+    finally:
+        conn.close()
+        
+    counts = {
+        "total": len(rows),
+        "eligible": 0,
+        "short": 0,
+        "illiquid": 0,
+        "penny": 0,
+        "stale": 0
+    }
+    
+    for row in rows:
+        symbol, cnt, avg_vol, max_dt, lat_close = row
+        lat_close = lat_close if lat_close is not None else 0.0
+        
+        if cnt < 60:
+            counts["short"] += 1
+        elif avg_vol < 50000:
+            counts["illiquid"] += 1
+        elif lat_close < 20.0:
+            counts["penny"] += 1
+        elif max_dt < threshold_dt:
+            counts["stale"] += 1
+        else:
+            counts["eligible"] += 1
+            
+    return counts
+
 
 
 def get_row_count(db_path: str = DB_PATH) -> int:

@@ -79,7 +79,9 @@ def load_symbols() -> list[str]:
             symbol = row.get("SYMBOL", "").strip()
             if series in VALID_SERIES and symbol:
                 tickers.append(symbol + YAHOO_SUFFIX)
-    log.info("Loaded %d tickers from symbols.csv (filtered to %s)", len(tickers), VALID_SERIES)
+    # Always ensure ^NSEI is included for benchmark data
+    tickers.append("^NSEI")
+    log.info("Loaded %d tickers from symbols.csv (filtered to %s) + ^NSEI", len(tickers), VALID_SERIES)
     return tickers
 
 

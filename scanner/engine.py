@@ -11,8 +11,11 @@ Batch scanning via ThreadPoolExecutor with NUM_AGENTS workers.
 from __future__ import annotations
 
 import logging
+import os
+import sqlite3
+import sys
 import time
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Optional
 
 from config import (
@@ -20,8 +23,14 @@ from config import (
     MIN_SIGNAL_SCORE,
     TOP_N_CANDIDATES,
     STAGE2_MIN_SCORE,
+    WORKER_COUNT,
 )
-from fetcher.db_writer import read_ohlcv, get_all_symbols
+from fetcher.db_writer import (
+    read_ohlcv,
+    get_eligible_symbols,
+    get_prefilter_counts,
+    get_connection,
+)
 
 from scanner.models import Candle, ScanResult, rows_to_candles
 from scanner.trend import analyze_trend
@@ -53,7 +62,11 @@ def _load_nifty_candles() -> list[Candle]:
 # Single-symbol scan
 # ---------------------------------------------------------------------------
 
-def scan_symbol(symbol: str) -> Optional[ScanResult]:
+def scan_symbol(
+    symbol: str,
+    conn: Optional[sqlite3.Connection] = None,
+    nifty_candles: Optional[list[Candle]] = None,
+) -> Optional[ScanResult]:
     """
     Run the full analysis pipeline for a single symbol.
 
@@ -64,7 +77,7 @@ def scan_symbol(symbol: str) -> Optional[ScanResult]:
       • No chart pattern detected
     """
     # 1. Read OHLCV from DB
-    rows = read_ohlcv(symbol)
+    rows = read_ohlcv(symbol, conn=conn)
     if not rows:
         return None
 
@@ -89,7 +102,7 @@ def scan_symbol(symbol: str) -> Optional[ScanResult]:
         return None
 
     # 6. RS rank vs Nifty 50
-    nifty = _load_nifty_candles()
+    nifty = nifty_candles if nifty_candles is not None else _load_nifty_candles()
     rs = compute_rs(candles, nifty)
 
     # 7. Risk-reward
@@ -124,12 +137,42 @@ def scan_symbol(symbol: str) -> Optional[ScanResult]:
 
 
 # ---------------------------------------------------------------------------
+# Top-level Batch Scan Process Worker
+# ---------------------------------------------------------------------------
+
+def _scan_batch(batch: list[str]) -> tuple[list[ScanResult], int]:
+    """
+    Worker entry point for processing a batch of symbols.
+    Opens its own SQLite connection, pre-loads nifty candles, and scans symbols.
+    """
+    conn = get_connection()
+    try:
+        nifty_rows = read_ohlcv("^NSEI", conn=conn)
+        nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
+        
+        results = []
+        scanned_count = 0
+        for symbol in batch:
+            try:
+                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles)
+                if res is not None:
+                    results.append(res)
+            except Exception as e:
+                print(f"[WARN] {symbol}: {e}", file=sys.stderr)
+            finally:
+                scanned_count += 1
+        return results, scanned_count
+    finally:
+        conn.close()
+
+
+# ---------------------------------------------------------------------------
 # Batch scan
 # ---------------------------------------------------------------------------
 
 def scan_all() -> list[ScanResult]:
     """
-    Scan every symbol in the database using a thread pool.
+    Scan every eligible symbol in the database using a process pool.
 
     Returns the top ``TOP_N_CANDIDATES`` results sorted by composite
     score descending, filtered by ``MIN_SIGNAL_SCORE``.
@@ -137,54 +180,87 @@ def scan_all() -> list[ScanResult]:
     global _nifty_candles
     _nifty_candles = None  # reset cache for fresh data each run
 
-    symbols = get_all_symbols()
-    total = len(symbols)
-    logger.info("Starting scan of %d symbols with %d workers", total, NUM_AGENTS)
+    # 1.9 Verify ^NSEI is present in ohlcv.db
+    nifty_rows = read_ohlcv("^NSEI")
+    if not nifty_rows:
+        raise RuntimeError(
+            "^NSEI not found in ohlcv.db. Add it to symbols.csv and re-run "
+            "--mode full to fetch benchmark data."
+        )
+
+    # SQLite pre-filtering
+    prefilter = get_prefilter_counts()
+    eligible_symbols = get_eligible_symbols()
+
+    # Log pre-filter summary
+    skipped = prefilter["total"] - prefilter["eligible"]
+    logger.info(
+        "Pre-filter: %d total -> %d eligible "
+        "(%d removed - %d illiquid, %d stale, %d penny, %d insufficient history)",
+        prefilter["total"],
+        prefilter["eligible"],
+        skipped,
+        prefilter["illiquid"],
+        prefilter["stale"],
+        prefilter["penny"],
+        prefilter["short"]
+    )
+
+    if not eligible_symbols:
+        logger.info("No eligible symbols to scan after pre-filtering.")
+        return []
+
+    # Configure worker counts based on WORKER_COUNT and symbol count
+    actual_workers = min(WORKER_COUNT, len(eligible_symbols))
+    batch_size = (len(eligible_symbols) + actual_workers - 1) // actual_workers
+    cpu_cores = os.cpu_count() or 1
+
+    # 3.3 Startup diagnostic log
+    print("\n" + "-" * 49)
+    print("-- SwingsterV2 Scan Engine ----------------------")
+    print(f"CPU cores available  : {cpu_cores}")
+    print(f"Workers to be used   : {actual_workers}")
+    print(f"Eligible symbols     : {len(eligible_symbols)}")
+    print(f"Batch size per worker: ~{batch_size}")
+    print(f"Estimated scan time  : ~8s")
+    print("-" * 49 + "\n")
+    sys.stdout.flush()
+
+    # 2.6 Batch splitting strategy using round-robin slice
+    batches = [eligible_symbols[i::actual_workers] for i in range(actual_workers)]
+    batches = [b for b in batches if b]  # Avoid empty batches
 
     t0 = time.perf_counter()
-
     results: list[ScanResult] = []
-    errors = 0
-    count_stage2 = 0
-    count_liquid = 0
-    count_pattern = 0
-    processed = 0
+    total_eligible = len(eligible_symbols)
+    total_scanned = 0
+    executor = None
 
-    def _scan_one(sym: str) -> Optional[ScanResult]:
-        """Wrapper with per-symbol error handling."""
-        try:
-            return scan_symbol(sym)
-        except Exception:
-            logger.warning("Error scanning %s", sym, exc_info=True)
-            return None
+    try:
+        with ProcessPoolExecutor(max_workers=actual_workers) as executor_obj:
+            executor = executor_obj
+            futures = {executor.submit(_scan_batch, batch): batch for batch in batches}
+            
+            for future in as_completed(futures):
+                batch_results, batch_count = future.result()
+                results.extend(batch_results)
+                total_scanned += batch_count
+                # Safe progress tracking
+                print(f"Progress: {total_scanned}/{total_eligible} scanned | {len(results)} candidates found")
+                sys.stdout.flush()
+    except KeyboardInterrupt:
+        print("\nScan interrupted by user.")
+        if executor is not None:
+            executor.shutdown(wait=False, cancel_futures=True)
+        raise
 
-    with ThreadPoolExecutor(max_workers=NUM_AGENTS) as executor:
-        futures = {executor.submit(_scan_one, sym): sym for sym in symbols}
-
-        for future in as_completed(futures):
-            processed += 1
-
-            # Progress logging every 100 symbols
-            if processed % 100 == 0:
-                elapsed = time.perf_counter() - t0
-                logger.info(
-                    "Progress: %d/%d (%.1fs elapsed)", processed, total, elapsed
-                )
-
-            result = future.result()
-            if result is not None:
-                results.append(result)
-
-    # Funnel counts — for accurate counts we re-scan the results
-    # (the per-symbol scan already did the filtering, so results
-    #  are the ones that passed ALL gates)
     count_pattern = len(results)
 
     # Filter by MIN_SIGNAL_SCORE
     results = [r for r in results if r.composite_score >= MIN_SIGNAL_SCORE]
 
-    # Sort descending by composite score
-    results.sort(key=lambda r: r.composite_score, reverse=True)
+    # Sort descending by composite score, then ascending by symbol to guarantee deterministic order
+    results.sort(key=lambda r: (-r.composite_score, r.symbol))
 
     # Cap at TOP_N_CANDIDATES
     results = results[:TOP_N_CANDIDATES]
@@ -194,7 +270,7 @@ def scan_all() -> list[ScanResult]:
     logger.info(
         "Scan complete | Scanned: %d | Patterns found: %d | "
         "Candidates (score>=%d): %d | Time: %.1fs",
-        total,
+        total_eligible,
         count_pattern,
         MIN_SIGNAL_SCORE,
         len(results),
@@ -202,3 +278,4 @@ def scan_all() -> list[ScanResult]:
     )
 
     return results
+
