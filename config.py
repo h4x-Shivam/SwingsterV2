@@ -69,7 +69,7 @@ TOP_N_FINAL = 10               # final ranked output
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")
 GROQ_MODEL           = "llama-3.3-70b-versatile"
 GROQ_MODEL_FALLBACK  = "llama-3.1-8b-instant"
-GROQ_MAX_TOKENS      = 2000
+GROQ_MAX_TOKENS      = 4000
 GROQ_TIMEOUT         = 60     # seconds
 
 

@@ -257,6 +257,7 @@ def _parse_and_validate(raw_text: str, candidates: list[dict]) -> list[dict]:
     end_idx = clean.rfind("]")
     if start_idx == -1 or end_idx == -1:
         logger.error("No JSON array found in response")
+        logger.error(f"Raw response was: {raw_text}")
         return _fallback_ranking(candidates)
     clean = clean[start_idx : end_idx + 1]
 
