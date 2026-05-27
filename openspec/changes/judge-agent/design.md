@@ -21,32 +21,40 @@ To ensure this does not slow down nightly execution, we will leverage Groq's hig
 ## Decisions
 
 ### 1. Groq LPU Inference over Traditional APIs
-- **Choice**: Groq Chat Completions API with the `llama-3.3-70b-versatile` model (fallback: `llama-3.1-8b-instant`).
+- **Choice**: Groq Chat Completions API with the `llama-3.3-70b-versatile` model.
 - **Rationale**: Response times on standard APIs for a 70B model range from 15-20 seconds. Groq performs this in 1-3 seconds, fitting neatly in our nightly batch scan workflow.
 
-### 2. High-Precision Gating with Low Temperature (0.1)
-- **Choice**: Set temperature to 0.1, max tokens to 2000, and a connection timeout of 60 seconds.
-- **Rationale**: Minimizes random generation (hallucinations) and guarantees adherence to structured JSON array instructions.
+### 2. Primary and Fallback Models
+- **Choice**: Primary: `llama-3.3-70b-versatile`. Fallback: `llama-3.1-8b-instant`.
+- **Rationale**: If the primary model encounters a `RateLimitError` (HTTP 429), the agent retries exactly once using `GROQ_MODEL_FALLBACK` with identical parameters. Any other exception goes straight to the fail-safe `_fallback_ranking()`.
 
-### 3. Fail-Safe Parsing and Fallback
-- **Choice**: Extract JSON array utilizing `clean.find("[")` and `clean.rfind("]")`. If parsing fails, fall back to a deterministic `_fallback_ranking()` that sorts by composite score descending.
-- **Rationale**: Prevents accidental LLM preambles or post-prose from breaking the parser, and guarantees 100% pipeline reliability even if API rate limits or outages occur.
+### 3. Temperature Gating
+- **Choice**: Low temperature `0.1` mandatory (never set above `0.3`).
+- **Rationale**: Low temperature guarantees highly consistent structured JSON outputs and prevents the LLM from adding verbose prose preambles or postscripts.
 
-### 4. Calculated Field Safeguard
-- **Choice**: Compare and restore `buy_point`, `stop_loss`, `target`, and `rr_ratio` from the original scan results.
-- **Rationale**: Prevents critical financial parameters from being hallucinated by LLM reasoning, maintaining quantitative truth.
+### 4. Precise 10-Stage Parsing & Validation Sequence
+- **Step 1**: Strip markdown code fences (` ```json `, ` ```JSON `, ` ``` `).
+- **Step 2**: Extract array boundaries by searching for first `[` and last `]`. Returns fallback if not found.
+- **Step 3**: Parse JSON with `json.loads()`.
+- **Step 4**: Validate list type and verify it is not empty.
+- **Step 5**: Trim results to exactly 10 if the LLM returned more than 10.
+- **Step 6**: Pad results if fewer than 10 by filling from original candidates sorted by `composite_score` descending (excluding symbols already in the list), using specific fallback fields.
+- **Step 7**: Validate all 19 required fields per candidate. Fill missing values from original candidates (strings default to `""`, numbers to `0`).
+- **Step 8**: Protect calculated fields (`buy_point`, `stop_loss`, `target`, `rr_ratio`) by overwriting them with original values from the scanner.
+- **Step 9**: Sector concentration check: warn only (log warnings if sector count > 2) without removing items. Sector diversification is the prompt's responsibility; the validator only tracks and alerts.
+- **Step 10**: Re-index ranks cleanly from 1 to 10.
 
-### 5. Sector Diversification Capping
-- **Choice**: Apply a sector capping constraint of maximum 2 symbols per sector in the final top 10 list.
-- **Rationale**: Mimics prudent risk management, preventing sector concentration risk during volatile market phases.
+### 5. Fallback Mechanism (`_fallback_ranking()`)
+- **Choice**: Sort all original candidates by `composite_score` descending and take the top 10.
+- **Rationale**: If the API call fails or the output is completely corrupted, the pipeline falls back gracefully to a high-quality quantitative ranking, preventing any crashes.
 
 ## Risks / Trade-offs
 
 - **[Risk] API Downtime or Rate Limits**  
-  *Mitigation*: The `_fallback_ranking()` logic immediately intercepts errors, generating a valid top 10 portfolio solely on quantitative composite scoring, completely avoiding crashes.
+  *Mitigation*: The one-time rate-limit fallback retry combined with immediate fail-safe `_fallback_ranking()` ensures 100% execution robustness.
   
 - **[Risk] Missing or Incorrect Sector Data**  
-  *Mitigation*: If the LLM returns an empty sector or omits it, the parser automatically restores the original candidate data fields or populates them with safe defaults.
+  *Mitigation*: Automated re-mapping of required fields using a `candidate_lookup` lookup dictionary guarantees all fields are populated correctly.
   
 - **[Risk] Accidental Markdown Formatting in LLM Output**  
-  *Mitigation*: Stripping of typical markdown wrappers (` ```json `, ` ``` `, etc.) is hardcoded prior to JSON deserialization.
+  *Mitigation*: Fenced formatting blocks are stripped and array search bounds are extracted prior to parsing.

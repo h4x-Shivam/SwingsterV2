@@ -20,7 +20,14 @@ The current SwingsterV2 scanner performs high-performance quantitative scanning 
 
 ## Impact
 
-- `requirements.txt`: Adds `groq>=0.9.0`.
-- `config.py`: Adds constants `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_MAX_TOKENS`, and `GROQ_TIMEOUT`.
-- `main.py`: Integrates `run_judge` and `save_top10` inside the main runtime pipeline.
-- `data/top10.json`: New persistent output location for the curated portfolio candidates.
+### Files to create or modify
+- `requirements.txt`: Add `groq>=0.9.0`.
+- `config.py`: Add Groq API parameters and constants (`GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_MODEL_FALLBACK`, `GROQ_MAX_TOKENS`, and `GROQ_TIMEOUT`).
+- `judge/__init__.py`: Create empty package initialization file.
+- `judge/judge_agent.py`: Create Core Judge Module containing prompts, client initialization, fallback logic, validation parser, and file persistence.
+- `main.py`: Import `run_judge` and `save_top10`, feed scanned candidates, and format console stdout output.
+
+### Files to NOT touch
+- `scanner/` (all files): Scanner is complete.
+- `fetcher/` (all files): Fetcher is complete.
+- `scanner/models.py`: Dataclass models are complete.
