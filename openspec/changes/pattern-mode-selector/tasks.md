@@ -5,20 +5,20 @@
 
 ## 1. Configuration and Models
 
-- [ ] 1.1 Add to `config.py`:
+- [x] 1.1 Add to `config.py`:
           ```python
           SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
           SCAN_MODE  = "VCP"   # default mode — change per run
           ```
 
-- [ ] 1.2 Add `scan_mode: str = "ALL"` field to `ScanResult` dataclass
+- [x] 1.2 Add `scan_mode: str = "ALL"` field to `ScanResult` dataclass
           in `scanner/models.py`
 
 ---
 
 ## 2. Pattern Gating Implementation
 
-- [ ] 2.1 Call `find_swing_pivots()` BEFORE any mode gate inside
+- [x] 2.1 Call `find_swing_pivots()` BEFORE any mode gate inside
           `detect_patterns()` — pivots are required by ALL detectors
           and must never be conditional:
           ```python
@@ -28,10 +28,10 @@
               # mode gates below...
           ```
 
-- [ ] 2.2 Update `detect_patterns()` signature in `scanner/patterns.py`
+- [x] 2.2 Update `detect_patterns()` signature in `scanner/patterns.py`
           to accept `mode: str = "ALL"` as second parameter
 
-- [ ] 2.3 Gate each detector call based on active mode:
+- [x] 2.3 Gate each detector call based on active mode:
           ```python
           if mode in ("VCP", "ALL"):
               sig = _detect_vcp(candles, pivots)
@@ -50,7 +50,7 @@
               if sig: signals.append(sig)
           ```
 
-- [ ] 2.4 Return highest strength signal from collected signals,
+- [x] 2.4 Return highest strength signal from collected signals,
           or None if signals list is empty:
           ```python
           return max(signals, key=lambda s: s.strength) if signals else None
@@ -60,7 +60,7 @@
 
 ## 3. Scan Engine — Mode Threading
 
-- [ ] 3.1 Update `scan_symbol()` signature in `scanner/engine.py`:
+- [x] 3.1 Update `scan_symbol()` signature in `scanner/engine.py`:
           ```python
           # BEFORE
           def scan_symbol(symbol, conn, nifty_candles) -> ScanResult | None:
@@ -70,7 +70,7 @@
           Pass `mode` to `detect_patterns()` and set `scan_mode = mode`
           on the returned `ScanResult`
 
-- [ ] 3.2 Update `_scan_batch()` worker function to accept a single
+- [x] 3.2 Update `_scan_batch()` worker function to accept a single
           tuple argument (required for ProcessPoolExecutor on Windows):
           ```python
           # BEFORE
@@ -81,7 +81,7 @@
           ```
           Pass `mode` down to `scan_symbol()` inside the worker loop
 
-- [ ] 3.3 Update `scan_all()` signature:
+- [x] 3.3 Update `scan_all()` signature:
           ```python
           # BEFORE
           def scan_all() -> list[ScanResult]:
@@ -89,7 +89,7 @@
           def scan_all(mode: str = SCAN_MODE) -> list[ScanResult]:
           ```
 
-- [ ] 3.4 Add mode validation at the top of `scan_all()`:
+- [x] 3.4 Add mode validation at the top of `scan_all()`:
           ```python
           if mode not in SCAN_MODES:
               raise ValueError(
@@ -97,13 +97,13 @@
               )
           ```
 
-- [ ] 3.5 Pack mode into worker args tuple before submitting:
+- [x] 3.5 Pack mode into worker args tuple before submitting:
           ```python
           worker_args = [(batch, mode) for batch in batches]
           futures = [executor.submit(_scan_batch, args) for args in worker_args]
           ```
 
-- [ ] 3.6 Update progress log inside `scan_all()` to include active mode:
+- [x] 3.6 Update progress log inside `scan_all()` to include active mode:
           ```python
           print(f"Progress: {total_scanned}/{len(eligible)} | "
                 f"{len(all_results)} {mode} candidates found")
@@ -111,7 +111,7 @@
           Mode must be visible in every progress line —
           not just "candidates found"
 
-- [ ] 3.7 Add final summary log after all futures complete:
+- [x] 3.7 Add final summary log after all futures complete:
           ```python
           print(f"\nScan complete — mode: {mode} | "
                 f"{len(eligible)} scanned | "
@@ -123,7 +123,7 @@
 
 ## 4. Main Entry Point
 
-- [ ] 4.1 Create `main.py` at project root with argparse CLI:
+- [x] 4.1 Create `main.py` at project root with argparse CLI:
           ```python
           import argparse
           from config import SCAN_MODE, SCAN_MODES
@@ -139,17 +139,17 @@
               args = parser.parse_args()
           ```
 
-- [ ] 4.2 Add startup banner before scan begins:
+- [x] 4.2 Add startup banner before scan begins:
           ```python
           print(f"\n{'─' * 50}")
           print(f"  SwingsterV2 — Pattern Mode: {args.mode}")
           print(f"{'─' * 50}\n")
           ```
 
-- [ ] 4.3 Call `scan_all(mode=args.mode)` inside `if __name__ == "__main__"`
+- [x] 4.3 Call `scan_all(mode=args.mode)` inside `if __name__ == "__main__"`
           guard — never at module level
 
-- [ ] 4.4 Add temporary output placeholder until judge_agent.py is built:
+- [x] 4.4 Add temporary output placeholder until judge_agent.py is built:
           Print top 10 candidates by composite_score to console as
           formatted JSON so results can be visually verified:
           ```python
@@ -207,23 +207,23 @@
 
 ## 7. Verification
 
-- [ ] 7.1 Run `python main.py --mode VCP`
+- [x] 7.1 Run `python main.py --mode VCP`
           PASS: all results have `pattern == "vcp"`
           FAIL: any result shows "pole_flag", "cup_handle", or "breakout"
 
-- [ ] 7.2 Run `python main.py --mode CUP_HANDLE`
+- [x] 7.2 Run `python main.py --mode CUP_HANDLE`
           PASS: all results have `pattern == "cup_handle"`
           FAIL: any other pattern appears in results
 
-- [ ] 7.3 Run `python main.py --mode ALL`
+- [x] 7.3 Run `python main.py --mode ALL`
           PASS: mixed patterns appear across results
           FAIL: only one pattern type appears (gating is broken)
 
-- [ ] 7.4 Run `python main.py --mode INVALID`
+- [x] 7.4 Run `python main.py --mode INVALID`
           PASS: `ValueError` raised with message listing valid modes
           FAIL: scan runs anyway or crashes with unhandled exception
 
-- [ ] 7.5 Measure and compare execution time:
+- [x] 7.5 Measure and compare execution time:
           ```python
           # run both and record times
           python main.py --mode VCP    # time this
@@ -233,11 +233,11 @@
           FAIL: VCP-only is same speed or slower → mode gating
                 is not working, detectors are still all running
 
-- [ ] 7.6 Verify `data/results.json` is created after every run
+- [x] 7.6 Verify `data/results.json` is created after every run
           and contains valid JSON with correct pattern field
           matching the mode that was run
 
-- [ ] 7.7 Verify progress logs show mode name on every line:
+- [x] 7.7 Verify progress logs show mode name on every line:
           PASS: `"Progress: 400/1847 | 6 VCP candidates found"`
           FAIL: `"Progress: 400/1847 | 6 candidates found"` (mode missing)
 
