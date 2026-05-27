@@ -52,6 +52,10 @@ NUM_AGENTS = 5                 # parallel ThreadPoolExecutor workers
 import os
 WORKER_COUNT = max(1, min(NUM_AGENTS, (os.cpu_count() or 2) - 1))
 
+# Pattern scan modes
+SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
+SCAN_MODE  = "VCP"   # default mode — change per run
+
 MIN_SIGNAL_SCORE = 55          # minimum pattern signal score to be a candidate
 TOP_N_CANDIDATES = 30          # sent to the Claude judge
 TOP_N_FINAL = 10               # final ranked output

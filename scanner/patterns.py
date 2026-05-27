@@ -626,20 +626,34 @@ def _detect_breakout(
 # 5E — Entry Point
 # ═══════════════════════════════════════════════════════════════════════════
 
-def detect_patterns(candles: list[Candle]) -> Optional[PatternSignal]:
+def detect_patterns(candles: list[Candle], mode: str = "ALL") -> Optional[PatternSignal]:
     """
-    Run all 4 pattern detectors, return the signal with the highest
-    ``strength`` score, or ``None`` if no pattern is found.
+    Run the selected pattern detectors based on the mode, return the signal
+    with the highest ``strength`` score, or ``None`` if no pattern is found.
     """
-    pivots = find_swing_pivots(candles)
+    pivots = find_swing_pivots(candles)  # always runs unconditionally
 
     signals: list[PatternSignal] = []
 
-    # Each detector has its own candle-count guard
-    for detector in (_detect_vcp, _detect_pole_flag, _detect_cup_handle, _detect_breakout):
-        result = detector(candles, pivots)
-        if result is not None:
-            signals.append(result)
+    if mode in ("VCP", "ALL"):
+        sig = _detect_vcp(candles, pivots)
+        if sig:
+            signals.append(sig)
+
+    if mode in ("FLAG_POLE", "ALL"):
+        sig = _detect_pole_flag(candles, pivots)
+        if sig:
+            signals.append(sig)
+
+    if mode in ("CUP_HANDLE", "ALL"):
+        sig = _detect_cup_handle(candles, pivots)
+        if sig:
+            signals.append(sig)
+
+    if mode in ("BREAKOUT", "ALL"):
+        sig = _detect_breakout(candles, pivots)
+        if sig:
+            signals.append(sig)
 
     if not signals:
         return None

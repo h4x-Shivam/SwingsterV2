@@ -24,6 +24,8 @@ from config import (
     TOP_N_CANDIDATES,
     STAGE2_MIN_SCORE,
     WORKER_COUNT,
+    SCAN_MODES,
+    SCAN_MODE,
 )
 from fetcher.db_writer import (
     read_ohlcv,
@@ -66,6 +68,7 @@ def scan_symbol(
     symbol: str,
     conn: Optional[sqlite3.Connection] = None,
     nifty_candles: Optional[list[Candle]] = None,
+    mode: str = "ALL",
 ) -> Optional[ScanResult]:
     """
     Run the full analysis pipeline for a single symbol.
@@ -97,7 +100,7 @@ def scan_symbol(
         return None
 
     # 5. Pattern detection — skip if None
-    signal = detect_patterns(candles)
+    signal = detect_patterns(candles, mode=mode)
     if signal is None:
         return None
 
@@ -133,6 +136,7 @@ def scan_symbol(
         rr_ratio=rr.ratio,
         current_price=candles[-1].close,
         distance_from_buy_pct=signal.distance_from_buy_pct,
+        scan_mode=mode,
     )
 
 
@@ -140,11 +144,12 @@ def scan_symbol(
 # Top-level Batch Scan Process Worker
 # ---------------------------------------------------------------------------
 
-def _scan_batch(batch: list[str]) -> tuple[list[ScanResult], int]:
+def _scan_batch(args: tuple) -> tuple[list[ScanResult], int]:
     """
     Worker entry point for processing a batch of symbols.
     Opens its own SQLite connection, pre-loads nifty candles, and scans symbols.
     """
+    batch, mode = args
     conn = get_connection()
     try:
         nifty_rows = read_ohlcv("^NSEI", conn=conn)
@@ -154,7 +159,7 @@ def _scan_batch(batch: list[str]) -> tuple[list[ScanResult], int]:
         scanned_count = 0
         for symbol in batch:
             try:
-                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles)
+                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles, mode=mode)
                 if res is not None:
                     results.append(res)
             except Exception as e:
@@ -170,7 +175,7 @@ def _scan_batch(batch: list[str]) -> tuple[list[ScanResult], int]:
 # Batch scan
 # ---------------------------------------------------------------------------
 
-def scan_all() -> list[ScanResult]:
+def scan_all(mode: str = SCAN_MODE) -> list[ScanResult]:
     """
     Scan every eligible symbol in the database using a process pool.
 
@@ -179,6 +184,12 @@ def scan_all() -> list[ScanResult]:
     """
     global _nifty_candles
     _nifty_candles = None  # reset cache for fresh data each run
+
+    # mode validation
+    if mode not in SCAN_MODES:
+        raise ValueError(
+            f"Invalid mode '{mode}'. Must be one of: {SCAN_MODES}"
+        )
 
     # 1.9 Verify ^NSEI is present in ohlcv.db
     nifty_rows = read_ohlcv("^NSEI")
@@ -230,6 +241,9 @@ def scan_all() -> list[ScanResult]:
     batches = [eligible_symbols[i::actual_workers] for i in range(actual_workers)]
     batches = [b for b in batches if b]  # Avoid empty batches
 
+    # Pack (batch, mode) tuple for each worker
+    worker_args = [(batch, mode) for batch in batches]
+
     t0 = time.perf_counter()
     results: list[ScanResult] = []
     total_eligible = len(eligible_symbols)
@@ -239,14 +253,14 @@ def scan_all() -> list[ScanResult]:
     try:
         with ProcessPoolExecutor(max_workers=actual_workers) as executor_obj:
             executor = executor_obj
-            futures = {executor.submit(_scan_batch, batch): batch for batch in batches}
+            futures = {executor.submit(_scan_batch, args): args for args in worker_args}
             
             for future in as_completed(futures):
                 batch_results, batch_count = future.result()
                 results.extend(batch_results)
                 total_scanned += batch_count
-                # Safe progress tracking
-                print(f"Progress: {total_scanned}/{total_eligible} scanned | {len(results)} candidates found")
+                # 3.6 Update progress log inside scan_all() to include active mode
+                print(f"Progress: {total_scanned}/{total_eligible} | {len(results)} {mode} candidates found")
                 sys.stdout.flush()
     except KeyboardInterrupt:
         print("\nScan interrupted by user.")
@@ -266,6 +280,13 @@ def scan_all() -> list[ScanResult]:
     results = results[:TOP_N_CANDIDATES]
 
     elapsed = time.perf_counter() - t0
+
+    # 3.7 Add final summary log after all futures complete (ASCII safe)
+    print(f"\nScan complete - mode: {mode} | "
+          f"{total_eligible} scanned | "
+          f"{count_pattern} matches -> "
+          f"top {len(results)} sent to judge")
+    sys.stdout.flush()
 
     logger.info(
         "Scan complete | Scanned: %d | Patterns found: %d | "

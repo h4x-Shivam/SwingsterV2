@@ -126,6 +126,8 @@ class ScanResult:
     rr_ratio: float
     current_price: float
     distance_from_buy_pct: float
+    scan_mode: str = "ALL"                    # which mode produced this result
+
 
 
 # ---------------------------------------------------------------------------
