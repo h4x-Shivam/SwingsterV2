@@ -57,8 +57,16 @@ SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
 SCAN_MODE  = "VCP"   # default mode — change per run
 
 MIN_SIGNAL_SCORE = 55          # minimum pattern signal score to be a candidate
-TOP_N_CANDIDATES = 30          # sent to the Claude judge
+TOP_N_CANDIDATES = 30          # sent to the Groq judge
 TOP_N_FINAL = 10               # final ranked output
+
+# Groq API — Judge Agent
+GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")
+GROQ_MODEL           = "llama-3.3-70b-versatile"
+GROQ_MODEL_FALLBACK  = "llama-3.1-8b-instant"
+GROQ_MAX_TOKENS      = 2000
+GROQ_TIMEOUT         = 60     # seconds
+
 
 # ---------------------------------------------------------------------------
 # Scoring Weights  (must sum to 1.0)

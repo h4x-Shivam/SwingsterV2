@@ -1,8 +1,11 @@
 import argparse
 import json
 import sys
+import os
 from config import SCAN_MODE, SCAN_MODES
 from scanner.engine import scan_all
+from judge.judge_agent import run_judge, save_top10
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SwingsterV2 Scanner")
@@ -23,19 +26,39 @@ if __name__ == "__main__":
     # 4.3 Call scan_all inside __main__ guard
     candidates = scan_all(mode=args.mode)
     
-    # 4.4 Temporary output placeholder
-    print(f"\nTop 10 - {args.mode} setups:\n")
-    top10 = sorted(candidates, key=lambda x: x.composite_score, reverse=True)[:10]
-    for i, r in enumerate(top10, 1):
-        print(f"  #{i:>2}  {r.symbol:<12} "
-              f"score={r.composite_score:.1f}  "
-              f"pattern={r.pattern:<12} "
-              f"buy=Rs {r.buy_point:.2f}  "
-              f"rr={r.rr_ratio:.1f}x")
-    sys.stdout.flush()
+    candidates_dict = [vars(c) for c in candidates]
     
     # Save full candidates to data/results.json for judge agent
+    os.makedirs("data", exist_ok=True)
     with open("data/results.json", "w") as f:
-        json.dump([vars(c) for c in candidates], f, indent=2)
+        json.dump(candidates_dict, f, indent=2)
     print(f"\nFull {len(candidates)} candidates saved -> data/results.json")
     sys.stdout.flush()
+    
+    # Wire judge
+    print(f"\nSending {len(candidates_dict)} candidates to Groq judge...")
+    sys.stdout.flush()
+    top10 = run_judge(candidates_dict, mode=args.mode)
+    save_top10(top10, mode=args.mode)
+    
+    # Print judge results
+    print(f"\n{'-' * 55}")
+    print(f"  TOP 10 - {args.mode} SETUPS")
+    print(f"{'-' * 55}")
+    for r in top10:
+        print(f"\n  #{r['rank']}  {r['symbol']:<12} "
+              f"[{r['pattern'].upper():<12}] "
+              f"Score: {r['composite_score']:.1f}  "
+              f"Conviction: {r['conviction']}")
+        print(f"      Buy:  Rs {r['buy_point']:.2f}  "
+              f"Stop: Rs {r['stop_loss']:.2f}  "
+              f"Target: Rs {r['target']:.2f}  "
+              f"R:R {r['rr_ratio']:.1f}x")
+        print(f"      {r['judge_verdict']}")
+        if r['flags']:
+            print(f"      WARNING: {r['flags']}")
+    print(f"\n{'-' * 55}")
+    print(f"Full results -> data/top10.json")
+    sys.stdout.flush()
+
+

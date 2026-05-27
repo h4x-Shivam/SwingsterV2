@@ -5,9 +5,9 @@
 
 ## 1. Dependencies and Configuration
 
-- [ ] 1.1 Add `groq>=0.9.0` to `requirements.txt`
+- [x] 1.1 Add `groq>=0.9.0` to `requirements.txt`
 
-- [ ] 1.2 Add to `config.py`:
+- [x] 1.2 Add to `config.py`:
           ```python
           import os
 
@@ -31,9 +31,9 @@
 
 ## 2. Core Judge Module
 
-- [ ] 2.1 Create empty `judge/__init__.py` to initialise the judge package
+- [x] 2.1 Create empty `judge/__init__.py` to initialise the judge package
 
-- [ ] 2.2 Create `judge/judge_agent.py` with Groq client initialisation:
+- [x] 2.2 Create `judge/judge_agent.py` with Groq client initialisation:
           ```python
           from groq import Groq
           from config import (
@@ -43,7 +43,7 @@
           client = Groq(api_key=GROQ_API_KEY)
           ```
 
-- [ ] 2.3 Implement `_build_system_prompt(mode: str) -> str`
+- [x] 2.3 Implement `_build_system_prompt(mode: str) -> str`
           Base prompt explains the agent's role as a Minervini-style
           NSE quant trader reviewing pre-screened candidates.
           Must include this critical instruction in the base:
@@ -69,7 +69,7 @@
           - ALL     : cross-pattern comparison, sector max 2 per sector,
                       proximity to buy point beats higher score
 
-- [ ] 2.4 Implement `_build_user_prompt(candidates: list[dict], mode: str) -> str`
+- [x] 2.4 Implement `_build_user_prompt(candidates: list[dict], mode: str) -> str`
           Must include:
           - Full candidates JSON via `json.dumps(candidates, indent=2)`
           - All 7 qualitative criteria in order of importance:
@@ -88,7 +88,7 @@
           - Repeat JSON-only instruction at the END of the prompt:
             "Remember: start with [ end with ] no text outside the array"
 
-- [ ] 2.5 Implement `run_judge(candidates: list[dict], mode: str = "ALL") -> list[dict]`
+- [x] 2.5 Implement `run_judge(candidates: list[dict], mode: str = "ALL") -> list[dict]`
 
           Primary call using GROQ_MODEL:
           ```python
@@ -107,7 +107,7 @@
           Low temperature prevents Groq/Llama from adding prose
           before or after the JSON array.
 
-- [ ] 2.5b Rate limit fallback — if primary call raises `RateLimitError`
+- [x] 2.5b Rate limit fallback — if primary call raises `RateLimitError`
            (HTTP 429), retry ONCE using `GROQ_MODEL_FALLBACK` with
            identical parameters before going to `_fallback_ranking()`.
            Any other exception goes straight to `_fallback_ranking()`.
@@ -131,7 +131,7 @@
                return _fallback_ranking(candidates)
            ```
 
-- [ ] 2.5c Log token usage after every successful API call:
+- [x] 2.5c Log token usage after every successful API call:
            ```python
            logger.info(
                f"Groq call complete in {elapsed:.2f}s | "
@@ -142,7 +142,7 @@
            This monitors free tier consumption.
            Groq free tier limit is ~14,400 tokens/min on 70B model.
 
-- [ ] 2.6 Implement `_parse_and_validate(raw_text: str, candidates: list[dict]) -> list[dict]`
+- [x] 2.6 Implement `_parse_and_validate(raw_text: str, candidates: list[dict]) -> list[dict]`
 
           In this exact order:
 
@@ -238,7 +238,7 @@
               item["rank"] = i + 1
           ```
 
-- [ ] 2.7 Implement `_fallback_ranking(candidates: list[dict]) -> list[dict]`
+- [x] 2.7 Implement `_fallback_ranking(candidates: list[dict]) -> list[dict]`
           Sort by composite_score descending, take top 10.
           Set these fields on every fallback item:
           ```python
@@ -255,7 +255,7 @@
           Fallback must always return exactly 10 items.
           Zero results from run_judge() is never acceptable.
 
-- [ ] 2.8 Implement `save_top10(top10: list[dict], mode: str)`
+- [x] 2.8 Implement `save_top10(top10: list[dict], mode: str)`
           Save to `data/top10.json` with this wrapper structure:
           ```python
           output = {
@@ -272,19 +272,19 @@
 
 ## 3. Pipeline Wiring in main.py
 
-- [ ] 3.1 Import at top of `main.py`:
+- [x] 3.1 Import at top of `main.py`:
           ```python
           from judge.judge_agent import run_judge, save_top10
           ```
 
-- [ ] 3.2 After `scan_all()` returns candidates, wire judge:
+- [x] 3.2 After `scan_all()` returns candidates, wire judge:
           ```python
           print(f"\nSending {len(candidates)} candidates to Groq judge...")
           top10 = run_judge(candidates, mode=args.mode)
           save_top10(top10, mode=args.mode)
           ```
 
-- [ ] 3.3 Console display after judge completes:
+- [x] 3.3 Console display after judge completes:
           ```python
           print(f"\n{'─' * 55}")
           print(f"  TOP 10 — {args.mode} SETUPS")
@@ -329,47 +329,47 @@
 
 ## 6. Verification
 
-- [ ] V1 Run `python main.py --mode VCP`
+- [x] V1 Run `python main.py --mode VCP`
        PASS: exactly 10 results returned
        PASS: all have judge_verdict, why_ranked_here, sector, flags
        PASS: data/top10.json created
        PASS: completes in under 5 seconds (Groq LPU speed)
        FAIL: crash, missing fields, > 10 seconds
 
-- [ ] V2 Run `python main.py --mode CUP_HANDLE`
+- [x] V2 Run `python main.py --mode CUP_HANDLE`
        PASS: all results have pattern == "cup_handle"
        PASS: no result has distance_from_buy_pct > 8%
        PASS: judge_verdict references cup/handle characteristics
 
-- [ ] V3a Simulate auth failure — set GROQ_API_KEY = "wrong_key"
+- [x] V3a Simulate auth failure — set GROQ_API_KEY = "wrong_key"
         PASS: AuthenticationError caught, fallback runs, 10 results returned
         PASS: judge_verdict says "Groq judge unavailable"
         PASS: no crash, pipeline completes
         Restore correct key after test
 
-- [ ] V3b Simulate timeout — set GROQ_TIMEOUT = 0.001
+- [x] V3b Simulate timeout — set GROQ_TIMEOUT = 0.001
         PASS: TimeoutError caught, fallback runs, 10 results returned
         PASS: no crash
         Restore correct timeout after test
 
-- [ ] V4 Verify protected fields not overridden:
+- [x] V4 Verify protected fields not overridden:
        For 3 symbols, compare buy_point, stop_loss, target, rr_ratio
        between data/top10.json and data/results.json
        PASS: values are byte-for-byte identical
        FAIL: any value differs
 
-- [ ] V5 Verify sector diversification:
+- [x] V5 Verify sector diversification:
        Count sector occurrences in data/top10.json results
        PASS: no sector appears more than twice
        FAIL: any sector appears 3+ times
        Note: if FAIL, check logs for the sector warning from validator
 
-- [ ] V6 Verify Groq response speed:
+- [x] V6 Verify Groq response speed:
        PASS: API call completes in under 5 seconds
        PASS: token usage logged correctly
        FAIL: > 10 seconds (check model name in config, may be wrong)
 
-- [ ] V7 Verify data/top10.json structure:
+- [x] V7 Verify data/top10.json structure:
        PASS: contains scan_mode, scan_time, total_picks, results
        PASS: results array has exactly 10 items
        PASS: each item has all 19 required fields:
@@ -379,7 +379,7 @@
              distance_from_buy_pct, conviction, sector,
              judge_verdict, why_ranked_here, flags
 
-- [ ] V8 Verify token usage is logged:
+- [x] V8 Verify token usage is logged:
        PASS: every successful run prints token count to logs
        PASS: total_tokens value is non-zero and reasonable (500–1500)
        FAIL: token count missing or zero
