@@ -2,6 +2,7 @@ import streamlit as st
 import json
 import os
 import time
+import textwrap
 import pandas as pd
 from scanner.engine import scan_all
 from judge.judge_agent import run_judge, save_top10
@@ -18,7 +19,7 @@ st.set_page_config(
 )
 
 # Premium Dark Glassmorphism CSS injection
-st.markdown("""
+st.html("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap');
     
@@ -97,7 +98,7 @@ st.markdown("""
         letter-spacing: 0.05em;
     }
 </style>
-""", unsafe_allow_html=True)
+""")
 
 # ---------------------------------------------------------------------------
 # Sidebar - Scanner Controls
@@ -199,37 +200,37 @@ if top10_data:
     # -----------------------------------------------------------------------
     m1, m2, m3, m4 = st.columns(4)
     with m1:
-        st.markdown(f"""
+        st.html(textwrap.dedent(f"""
         <div class='glass-card' style='text-align: center;'>
             <div class='metric-lbl'>Universe Pre-Filtered</div>
             <div class='metric-val'>1,483</div>
             <div class='metric-lbl' style='color:#10b981;'>Eligible Symbols</div>
         </div>
-        """, unsafe_allow_html=True)
+        """))
     with m2:
-        st.markdown(f"""
+        st.html(textwrap.dedent(f"""
         <div class='glass-card' style='text-align: center;'>
             <div class='metric-lbl'>Funnel Matches</div>
             <div class='metric-val'>{len(results_data)}</div>
             <div class='metric-lbl' style='color:#3b82f6;'>Scored Candidates</div>
         </div>
-        """, unsafe_allow_html=True)
+        """))
     with m3:
-        st.markdown(f"""
+        st.html(textwrap.dedent(f"""
         <div class='glass-card' style='text-align: center;'>
             <div class='metric-lbl'>LLM Gated</div>
             <div class='metric-val'>10</div>
             <div class='metric-lbl' style='color:#a855f7;'>Final Selections</div>
         </div>
-        """, unsafe_allow_html=True)
+        """))
     with m4:
-        st.markdown(f"""
+        st.html(textwrap.dedent(f"""
         <div class='glass-card' style='text-align: center;'>
             <div class='metric-lbl'>API Response Status</div>
             <div class='metric-val'>{"✓ OK" if has_api_key else "Fallback"}</div>
             <div class='metric-lbl' style='color:#f59e0b;'>{"LPU Engine" if has_api_key else "Quantitative Fallback"}</div>
         </div>
-        """, unsafe_allow_html=True)
+        """))
 
     # -----------------------------------------------------------------------
     # Main Dashboard Columns
@@ -266,7 +267,7 @@ if top10_data:
             if conviction == "HIGH": c_badge = "badge-high"
             elif conviction == "MEDIUM": c_badge = "badge-medium"
             
-            st.markdown(f"""
+            st.html(textwrap.dedent(f"""
             <div class="glass-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.8rem;">
                     <div style="display: flex; align-items: center; gap: 0.8rem;">
@@ -312,7 +313,7 @@ if top10_data:
                 </div>
                 {f'<div style="margin-top: 0.6rem; font-size: 0.85rem; background: rgba(239, 68, 68, 0.1); border: 1px dashed rgba(239,68,68,0.2); padding: 0.5rem; border-radius: 6px; color: #f87171;">⚠️ <b>Warning flag:</b> {flags}</div>' if flags else ''}
             </div>
-            """, unsafe_allow_html=True)
+            """))
             
     # Right Column: Visual analytics
     with right_col:
@@ -350,10 +351,10 @@ if top10_data:
         st.markdown("</div>", unsafe_allow_html=True)
 
 else:
-    st.markdown("""
+    st.html(textwrap.dedent("""
     <div class='glass-card' style='text-align: center; padding: 3rem;'>
         <div style='font-size: 3.5rem; margin-bottom: 1rem;'>📊</div>
         <h3>No Scanned Results Available</h3>
         <p style='color: #94a3b8; font-weight: 300;'>Click the <b>Run Live Parallel Scan</b> button in the sidebar control panel to trigger the quantitative process pool and Groq judge pipelines.</p>
     </div>
-    """, unsafe_allow_html=True)
+    """))
