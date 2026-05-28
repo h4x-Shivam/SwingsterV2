@@ -108,8 +108,13 @@ def scan_symbol(
     nifty = nifty_candles if nifty_candles is not None else _load_nifty_candles()
     rs = compute_rs(candles, nifty)
 
-    # 7. Risk-reward
-    rr = compute_risk_reward(candles)
+    # 7. Risk-reward — anchored to the pattern's buy_point
+    rr = compute_risk_reward(candles, buy_point=signal.buy_point)
+
+    # Gate: reject setups where risk-reward is invalid
+    #   (stop_loss above entry, or no upside after accounting for entry)
+    if rr.stop_loss >= signal.buy_point or rr.ratio <= 0:
+        return None
 
     # 8. Composite score
     composite = compute_composite_score(

@@ -87,7 +87,7 @@ def find_swing_pivots(
 
 
 # ═══════════════════════════════════════════════════════════════════════════
-# 5A — VCP (Volatility Contraction Pattern)
+# 5A — VCP (Volatility Contraction Pattern) — Minervini-Style
 # ═══════════════════════════════════════════════════════════════════════════
 
 def _detect_vcp(
@@ -95,66 +95,103 @@ def _detect_vcp(
     pivots: tuple[list[SwingHigh], list[SwingLow]],
 ) -> Optional[PatternSignal]:
     """
-    Detect a VCP: 2–4 successive contraction bases where each base's
-    price range and volume shrink relative to the prior base.
+    Detect a Minervini-style VCP (Volatility Contraction Pattern).
+
+    A VCP forms when a stock in an uptrend consolidates near its highs
+    with progressively shallower pullbacks and declining volume, then
+    breaks out above the pivot (resistance) on increased volume.
+
+    Algorithm
+    ---------
+    1. **Pivot** — highest swing high in the last 120 candles.
+       This is the resistance level the stock keeps testing.
+    2. **Pullbacks** — swing lows *after* the pivot.  Each pullback's
+       depth = (pivot − swing_low) / pivot × 100.
+    3. **Contraction run** — find ≥ 2 successive pullbacks where each
+       depth is shallower than the previous AND each low is higher
+       (ascending lows).
+    4. **Rally-back check** — between consecutive pullbacks the max
+       candle high must recover ≥ 50 % of the prior pullback (proving
+       the stock rallied back toward the pivot).
+    5. **Depth bounds** — first pullback 8–35 %; final pullback ≤ 15 %.
+    6. **Scoring** — contractions, tightness, volume dry-up, proximity.
+
+    Buy point = pivot price + 0.10.
     """
     if len(candles) < MIN_CANDLES_VCP:
         return None
 
     swing_highs, swing_lows = pivots
+    current_price = candles[-1].close
 
-    if len(swing_highs) < 2 or len(swing_lows) < 2:
+    # ------------------------------------------------------------------
+    # 1. Find the pivot — highest swing high in the last 120 candles
+    # ------------------------------------------------------------------
+    lookback_start = max(0, len(candles) - 120)
+    recent_highs = [sh for sh in swing_highs if sh.index >= lookback_start]
+
+    if not recent_highs:
         return None
 
-    # Build bases: pair each swing high with the nearest following swing low
-    bases: list[dict] = []
-    lo_idx = 0
-    for sh in swing_highs:
-        # find the first swing low AFTER this swing high
-        while lo_idx < len(swing_lows) and swing_lows[lo_idx].index <= sh.index:
-            lo_idx += 1
-        if lo_idx >= len(swing_lows):
-            break
-        sl = swing_lows[lo_idx]
+    pivot = max(recent_highs, key=lambda h: h.price)
+    pivot_price = pivot.price
+    pivot_idx = pivot.index
 
-        base_range = sh.price - sl.price
-        if base_range <= 0:
+    # Need ≥ 10 candles after the pivot for contractions to form
+    if len(candles) - 1 - pivot_idx < 10:
+        return None
+
+    # Current price must still be near the pivot (within 20 %)
+    if current_price < pivot_price * 0.80:
+        return None
+
+    # If price has already broken out well above the pivot, skip
+    if current_price > pivot_price * 1.03:
+        return None
+
+    # ------------------------------------------------------------------
+    # 2. Collect pullback troughs (swing lows) after the pivot
+    # ------------------------------------------------------------------
+    post_pivot_lows = [sl for sl in swing_lows if sl.index > pivot_idx]
+    if len(post_pivot_lows) < 2:
+        return None
+
+    pullbacks: list[dict] = []
+    for sl in post_pivot_lows:
+        depth_pct = (pivot_price - sl.price) / pivot_price * 100
+        if depth_pct <= 0 or depth_pct > 35:
             continue
 
-        # Avg volume between the high and low
-        start_i = sh.index
-        end_i = sl.index
-        vols = [candles[k].volume for k in range(start_i, min(end_i + 1, len(candles)))]
+        # Average volume around the trough (±5 candles)
+        vol_start = max(0, sl.index - 5)
+        vol_end = min(len(candles), sl.index + 6)
+        vols = [candles[k].volume for k in range(vol_start, vol_end)]
         avg_vol = sum(vols) / len(vols) if vols else 0
 
-        bases.append({
-            "high": sh.price,
+        pullbacks.append({
+            "index": sl.index,
             "low": sl.price,
-            "range": base_range,
+            "depth_pct": depth_pct,
             "avg_vol": avg_vol,
-            "high_idx": sh.index,
-            "low_idx": sl.index,
         })
 
-    if len(bases) < 2:
+    if len(pullbacks) < 2:
         return None
 
-    # Find the longest run of contracting bases (price + volume)
+    # ------------------------------------------------------------------
+    # 3. Find the longest run of contracting depths with ascending lows
+    # ------------------------------------------------------------------
     best_run: list[dict] = []
-    current_run: list[dict] = [bases[0]]
+    current_run: list[dict] = [pullbacks[0]]
 
-    for i in range(1, len(bases)):
+    for i in range(1, len(pullbacks)):
         prev = current_run[-1]
-        curr = bases[i]
+        curr = pullbacks[i]
 
-        price_contracting = curr["range"] <= prev["range"] * 0.85
-        vol_contracting = (
-            curr["avg_vol"] < prev["avg_vol"] * 0.75
-            if prev["avg_vol"] > 0
-            else True
-        )
+        depth_contracting = curr["depth_pct"] < prev["depth_pct"]
+        ascending_low = curr["low"] > prev["low"]
 
-        if price_contracting and vol_contracting:
+        if depth_contracting and ascending_low:
             current_run.append(curr)
         else:
             if len(current_run) > len(best_run):
@@ -173,46 +210,103 @@ def _detect_vcp(
         best_run = best_run[-4:]
         num_contractions = 4
 
-    # Tight zone check: final contraction range ≤ 8% of current price
-    current_price = candles[-1].close
-    final_range = best_run[-1]["range"]
-    final_range_pct = (final_range / current_price) * 100 if current_price > 0 else 999
+    # ------------------------------------------------------------------
+    # 4. Validate pullback depths
+    # ------------------------------------------------------------------
+    first_depth = best_run[0]["depth_pct"]
+    final_depth = best_run[-1]["depth_pct"]
 
-    if final_range_pct > 8.0:
+    # First pullback must be meaningful (8–35 %)
+    if first_depth < 8.0 or first_depth > 35.0:
         return None
 
-    # Buy point: highest high of last contraction + 0.10
-    buy_point = best_run[-1]["high"] + 0.10
-    distance_pct = ((buy_point - current_price) / current_price * 100) if current_price > 0 else 0
+    # Final pullback must be tight (≤ 15 %)
+    if final_depth > 15.0:
+        return None
 
-    # Signal strength scoring
+    # ------------------------------------------------------------------
+    # 5. Rally-back check between consecutive pullbacks
+    #    Price must recover ≥ 50 % of the way from the pullback low
+    #    back toward the pivot between successive troughs.
+    # ------------------------------------------------------------------
+    for i in range(len(best_run) - 1):
+        low1_idx = best_run[i]["index"]
+        low2_idx = best_run[i + 1]["index"]
+
+        # Need at least a few candles between pullbacks
+        if low2_idx - low1_idx < 3:
+            return None
+
+        between_high = max(
+            candles[k].high for k in range(low1_idx + 1, low2_idx)
+        )
+
+        pullback_range = pivot_price - best_run[i]["low"]
+        if pullback_range <= 0:
+            return None
+
+        recovery_pct = (
+            (between_high - best_run[i]["low"]) / pullback_range * 100
+        )
+        if recovery_pct < 50:
+            return None
+
+    # ------------------------------------------------------------------
+    # 6. Volume dry-up (soft — feeds into score)
+    # ------------------------------------------------------------------
+    vol_dry_up = True
+    for i in range(1, len(best_run)):
+        if best_run[i]["avg_vol"] > best_run[i - 1]["avg_vol"] * 1.2:
+            vol_dry_up = False
+            break
+
+    # ------------------------------------------------------------------
+    # 7. Buy point & distance
+    # ------------------------------------------------------------------
+    buy_point = pivot_price + 0.10
+    distance_pct = (
+        ((buy_point - current_price) / current_price * 100)
+        if current_price > 0
+        else 0
+    )
+
+    # ------------------------------------------------------------------
+    # 8. Signal strength scoring
+    # ------------------------------------------------------------------
     base_scores = {2: 50, 3: 70, 4: 90}
-    strength = base_scores.get(num_contractions, 90)
+    strength = float(base_scores.get(num_contractions, 90))
 
-    # Bonus: tight final zone (< 5%)
-    if final_range_pct < 5.0:
+    # Bonus: tight final contraction
+    if final_depth < 5.0:
         strength += 10
-    elif final_range_pct < 6.5:
+    elif final_depth < 8.0:
         strength += 5
 
-    # Bonus: strong volume dry-up (< 50% of prior base)
-    if num_contractions >= 2 and best_run[-2]["avg_vol"] > 0:
-        vol_ratio = best_run[-1]["avg_vol"] / best_run[-2]["avg_vol"]
-        if vol_ratio < 0.50:
-            strength += 10
-        elif vol_ratio < 0.65:
-            strength += 5
+    # Bonus: volume dry-up across contractions
+    if vol_dry_up:
+        strength += 10
 
-    strength = min(strength, 100.0)
+    # Bonus: strong contraction ratio (final depth ≤ 30 % of first)
+    if first_depth > 0 and final_depth / first_depth < 0.3:
+        strength += 5
+
+    # Penalty: buy point far from current price (> 10 % away)
+    if distance_pct > 10.0:
+        strength -= 10
+    elif distance_pct < 0:
+        # Price already at / above pivot — breakout in progress
+        strength += 5
+
+    strength = max(0.0, min(strength, 100.0))
 
     return PatternSignal(
         name="vcp",
         strength=strength,
         buy_point=round(buy_point, 2),
         distance_from_buy_pct=round(distance_pct, 2),
-        breakout_level=round(best_run[-1]["high"], 2),
-        pivot_high=round(best_run[0]["high"], 2),
-        contraction_depth=round(final_range_pct, 2),
+        breakout_level=round(pivot_price, 2),
+        pivot_high=round(pivot_price, 2),
+        contraction_depth=round(final_depth, 2),
         contraction_count=num_contractions,
     )
 

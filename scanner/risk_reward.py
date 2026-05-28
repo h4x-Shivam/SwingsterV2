@@ -92,9 +92,18 @@ def _find_swing_high_above(candles: list[Candle], current_price: float, n: int =
     return best
 
 
-def compute_risk_reward(candles: list[Candle]) -> RiskReward:
+def compute_risk_reward(
+    candles: list[Candle],
+    buy_point: Optional[float] = None,
+) -> RiskReward:
     """
     Compute risk-reward metrics for the symbol.
+
+    When *buy_point* is provided (the pattern-derived entry trigger),
+    all calculations are anchored to it:
+      • stop_loss  — 1 % buffer below the nearest swing low
+      • target     — nearest swing high **above buy_point**
+      • R:R ratio  — (target − buy_point) / (buy_point − stop_loss)
 
     Returns defaults (ratio=0, score=0) when fewer than 10 candles
     are available.
@@ -103,6 +112,7 @@ def compute_risk_reward(candles: list[Candle]) -> RiskReward:
         return RiskReward()
 
     current_price = candles[-1].close
+    entry = buy_point if buy_point is not None else current_price
 
     # Support: most recent swing low (n=3, lookback 20 candles)
     support = _find_swing_low(candles)
@@ -111,25 +121,36 @@ def compute_risk_reward(candles: list[Candle]) -> RiskReward:
         lookback_start = max(0, len(candles) - 20)
         support = min(c.low for c in candles[lookback_start:])
 
-    # Resistance: nearest swing high above current price
-    resistance = _find_swing_high_above(candles, current_price)
-    if resistance is None:
-        # Fallback: max high of last 20 candles
-        lookback_start = max(0, len(candles) - 20)
-        resistance = max(c.high for c in candles[lookback_start:])
-
     # Stop loss: 1% buffer below support
     stop_loss = support * 0.99
+
+    # Ensure stop_loss is below entry; if not, the setup is invalid
+    if stop_loss >= entry:
+        return RiskReward(
+            support=round(support, 2),
+            resistance=0.0,
+            stop_loss=round(stop_loss, 2),
+            target=0.0,
+            ratio=0.0,
+            score=0.0,
+        )
+
+    # Resistance / target: nearest swing high **above entry (buy_point)**
+    resistance = _find_swing_high_above(candles, entry)
+    if resistance is None:
+        # Measured-move fallback: entry + 2× risk (guarantees a 2:1 R:R)
+        risk = entry - stop_loss
+        resistance = entry + risk * 2.0
 
     # Target: resistance level
     target = resistance
 
     # RR ratio: (target - entry) / (entry - stop_loss)
-    denominator = current_price - stop_loss
+    denominator = entry - stop_loss
     if denominator <= 0:
         ratio = 0.0
     else:
-        ratio = (target - current_price) / denominator
+        ratio = (target - entry) / denominator
 
     ratio = max(ratio, 0.0)
 
