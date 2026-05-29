@@ -180,7 +180,11 @@ def _scan_batch(args: tuple) -> tuple[list[ScanResult], int]:
 # Batch scan
 # ---------------------------------------------------------------------------
 
-def scan_all(mode: str = SCAN_MODE) -> list[ScanResult]:
+def scan_all(
+    mode: str = SCAN_MODE,
+    progress_callback=None,
+    limit: Optional[int] = None,
+) -> list[ScanResult]:
     """
     Scan every eligible symbol in the database using a process pool.
 
@@ -207,6 +211,9 @@ def scan_all(mode: str = SCAN_MODE) -> list[ScanResult]:
     # SQLite pre-filtering
     prefilter = get_prefilter_counts()
     eligible_symbols = get_eligible_symbols()
+
+    if limit is not None and limit > 0:
+        eligible_symbols = eligible_symbols[:limit]
 
     # Log pre-filter summary
     skipped = prefilter["total"] - prefilter["eligible"]
@@ -264,6 +271,12 @@ def scan_all(mode: str = SCAN_MODE) -> list[ScanResult]:
                 batch_results, batch_count = future.result()
                 results.extend(batch_results)
                 total_scanned += batch_count
+                # Call callback if provided
+                if progress_callback is not None:
+                    try:
+                        progress_callback(total_scanned, total_eligible, results)
+                    except Exception as cb_err:
+                        print(f"[WARN] Progress callback error: {cb_err}", file=sys.stderr)
                 # 3.6 Update progress log inside scan_all() to include active mode
                 print(f"Progress: {total_scanned}/{total_eligible} | {len(results)} {mode} candidates found")
                 sys.stdout.flush()

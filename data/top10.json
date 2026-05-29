@@ -1,6 +1,6 @@
 {
   "scan_mode": "VCP",
-  "scan_time": "2026-05-28 17:02:15",
+  "scan_time": "2026-05-29 18:03:34",
   "total_picks": 10,
   "results": [
     {
@@ -41,8 +41,8 @@
       "distance_from_buy_pct": 0.4,
       "conviction": "MEDIUM",
       "sector": "Finance",
-      "judge_verdict": "This VCP setup is notable for its high volume score and proximity to the buy point, despite a low rr_ratio.",
-      "why_ranked_here": "Ranked second due to its high volume score and low distance from the buy point, but penalized for low rr_ratio.",
+      "judge_verdict": "This VCP setup is notable for its high volume score and proximity to the buy point, but the low rr_ratio is a concern.",
+      "why_ranked_here": "Ranked second due to its high volume score and low distance from the buy point, despite the low rr_ratio.",
       "flags": "low rr_ratio"
     },
     {
@@ -62,8 +62,8 @@
       "distance_from_buy_pct": 3.26,
       "conviction": "MEDIUM",
       "sector": "Pharma",
-      "judge_verdict": "This VCP setup is compelling due to its high signal strength and high rr_ratio, but has a higher distance from the buy point.",
-      "why_ranked_here": "Ranked third due to its high signal strength and high rr_ratio, but penalized for higher distance from the buy point.",
+      "judge_verdict": "This VCP setup is compelling due to its high signal strength and high rr_ratio, but the distance from the buy point is a concern.",
+      "why_ranked_here": "Ranked third due to its high signal strength and high rr_ratio, despite the moderate distance from the buy point.",
       "flags": ""
     },
     {
@@ -83,8 +83,8 @@
       "distance_from_buy_pct": 7.97,
       "conviction": "MEDIUM",
       "sector": "Metal",
-      "judge_verdict": "This VCP setup is notable for its high signal strength and high rr_ratio, but has a higher distance from the buy point.",
-      "why_ranked_here": "Ranked fourth due to its high signal strength and high rr_ratio, but penalized for higher distance from the buy point.",
+      "judge_verdict": "This VCP setup is notable for its high signal strength and high stage2_score, but the distance from the buy point is a concern.",
+      "why_ranked_here": "Ranked fourth due to its high signal strength and high stage2_score, despite the moderate distance from the buy point.",
       "flags": ""
     },
     {
@@ -104,8 +104,8 @@
       "distance_from_buy_pct": -1.88,
       "conviction": "MEDIUM",
       "sector": "Auto",
-      "judge_verdict": "This VCP setup is notable for its high volume score and proximity to the buy point, but has a lower signal strength.",
-      "why_ranked_here": "Ranked fifth due to its high volume score and low distance from the buy point, but penalized for lower signal strength.",
+      "judge_verdict": "This VCP setup is compelling due to its high stage2_score and low distance from the buy point, but the signal strength is moderate.",
+      "why_ranked_here": "Ranked fifth due to its high stage2_score and low distance from the buy point, despite the moderate signal strength.",
       "flags": ""
     },
     {
@@ -125,8 +125,8 @@
       "distance_from_buy_pct": 2.07,
       "conviction": "LOW",
       "sector": "Finance",
-      "judge_verdict": "This VCP setup is notable for its high volume score, but has a low rr_ratio and lower signal strength.",
-      "why_ranked_here": "Ranked sixth due to its high volume score, but penalized for low rr_ratio and lower signal strength.",
+      "judge_verdict": "This VCP setup is notable for its high volume score, but the low rr_ratio and moderate signal strength are concerns.",
+      "why_ranked_here": "Ranked sixth due to its high volume score, despite the low rr_ratio and moderate signal strength.",
       "flags": "low rr_ratio"
     },
     {
@@ -146,8 +146,8 @@
       "distance_from_buy_pct": 19.05,
       "conviction": "LOW",
       "sector": "Chemical",
-      "judge_verdict": "This VCP setup is notable for its high volume score, but has a higher distance from the buy point and lower signal strength.",
-      "why_ranked_here": "Ranked seventh due to its high volume score, but penalized for higher distance from the buy point and lower signal strength.",
+      "judge_verdict": "This VCP setup is notable for its high stage2_score, but the distance from the buy point and moderate signal strength are concerns.",
+      "why_ranked_here": "Ranked seventh due to its high stage2_score, despite the high distance from the buy point and moderate signal strength.",
       "flags": ""
     },
     {
@@ -165,10 +165,10 @@
       "stop_loss": 63.56,
       "target": 128.18,
       "distance_from_buy_pct": 10.48,
-      "conviction": "LOW",
+      "conviction": "MEDIUM",
       "sector": "Chemical",
-      "judge_verdict": "This VCP setup is notable for its high signal strength, but has a lower volume score and higher distance from the buy point.",
-      "why_ranked_here": "Ranked eighth due to its high signal strength, but penalized for lower volume score and higher distance from the buy point.",
+      "judge_verdict": "This VCP setup is compelling due to its high signal strength, but the distance from the buy point and moderate volume score are concerns.",
+      "why_ranked_here": "Ranked eighth due to its high signal strength, despite the moderate distance from the buy point and volume score.",
       "flags": ""
     },
     {
@@ -188,8 +188,8 @@
       "distance_from_buy_pct": 14.73,
       "conviction": "LOW",
       "sector": "Chemical",
-      "judge_verdict": "This VCP setup is notable for its high volume score, but has a higher distance from the buy point and lower signal strength.",
-      "why_ranked_here": "Ranked ninth due to its high volume score, but penalized for higher distance from the buy point and lower signal strength.",
+      "judge_verdict": "This VCP setup is notable for its high volume score, but the distance from the buy point and moderate signal strength are concerns.",
+      "why_ranked_here": "Ranked ninth due to its high volume score, despite the high distance from the buy point and moderate signal strength.",
       "flags": ""
     },
     {
@@ -209,8 +209,8 @@
       "distance_from_buy_pct": 17.42,
       "conviction": "LOW",
       "sector": "Pharma",
-      "judge_verdict": "This VCP setup is notable for its high volume score, but has a higher distance from the buy point and lower signal strength.",
-      "why_ranked_here": "Ranked tenth due to its high volume score, but penalized for higher distance from the buy point and lower signal strength.",
+      "judge_verdict": "This VCP setup is notable for its high volume score, but the distance from the buy point and low signal strength are concerns.",
+      "why_ranked_here": "Ranked tenth due to its high volume score, despite the high distance from the buy point and low signal strength.",
       "flags": ""
     }
   ]
