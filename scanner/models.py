@@ -12,6 +12,54 @@ Typed dataclasses for every intermediate and output structure:
 """
 
 from dataclasses import dataclass, field
+from typing import Dict, Any
+
+# ---------------------------------------------------------------------------
+# Pattern Config
+# ---------------------------------------------------------------------------
+
+@dataclass
+class PatternConfig:
+    # Identity
+    name:         str
+    full_name:    str
+    version:      str
+
+    # UI metadata
+    color:        str
+    icon:         str
+    description:  str
+    timeframe:    str
+
+    # Candle requirements
+    min_candles:  int
+
+    # Filtering thresholds
+    min_signal_score:          int
+    min_candidate_score:       float
+    max_candidates:            int
+    rr_hard_minimum:           float
+
+    # Volume direction
+    vol_contraction_required:  bool
+
+    # Scoring weights — must sum to 1.0
+    weight_signal:  float
+    weight_volume:  float
+    weight_rr:      float
+    weight_stage2:  float
+    weight_rs:      float
+
+    # Pattern-specific extras
+    extras: Dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        total = (self.weight_signal + self.weight_volume +
+                 self.weight_rr + self.weight_stage2 + self.weight_rs)
+        if abs(total - 1.0) > 0.001:
+            raise ValueError(
+                f"{self.name}: scoring weights must sum to 1.0, got {total:.3f}"
+            )
 
 
 # ---------------------------------------------------------------------------
