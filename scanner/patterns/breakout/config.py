@@ -1,0 +1,37 @@
+from scanner.models import PatternConfig
+
+BREAKOUT_CONFIG = PatternConfig(
+    name         = "BREAKOUT",
+    full_name    = "Horizontal Breakout",
+    version      = "1.0.0",
+    color        = "#f43f5e",
+    icon         = "🚀",
+    description  = "Price breaking through tested horizontal resistance",
+    timeframe    = "Momentum — days to weeks",
+    min_candles  = 30,
+    min_signal_score     = 50,
+    min_candidate_score  = 52.0,
+    max_candidates       = 30,
+    rr_hard_minimum      = 0.8,
+    vol_contraction_required = False,
+    weight_signal  = 0.30,
+    weight_volume  = 0.40,
+    weight_rr      = 0.15,
+    weight_stage2  = 0.10,
+    weight_rs      = 0.05,
+    extras = {
+        "vol_avg_window":             20,
+        "resistance_tolerance_pct":   2.5,
+        "min_resistance_tests":       2,
+        "min_test_spacing_days":      10,
+        "proximity_to_resistance":    3.0,
+        "breakout_vol_multiplier":    1.5,
+        "buy_point_buffer":           0.10,
+        "tests_for_90_score":         4,
+        "tests_for_70_score":         3,
+        "bonus_vol_ratio_25":         2.5,
+        "bonus_vol_ratio_20":         2.0,
+        "bonus_base_duration_50":     50,
+        "bonus_base_duration_30":     30,
+    }
+)

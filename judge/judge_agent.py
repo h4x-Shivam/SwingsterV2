@@ -11,6 +11,7 @@ from config import (
     GROQ_MAX_TOKENS,
     GROQ_TIMEOUT
 )
+from scanner.patterns.registry import get_patterns
 
 client = Groq(api_key=GROQ_API_KEY)
 
@@ -35,58 +36,14 @@ No explanation. No markdown. No code fences.
 Start your response with [ and end with ]
 Any text outside the JSON array will break the parser."""
 
-    mode_context = {
-        "VCP": """
-You are evaluating ONLY Volatility Contraction Pattern (VCP) setups.
-VCP criteria you must apply:
-- Prefer 3–4 contractions over 2 (more mature, more reliable base)
-- Final contraction must be the tightest of all contractions
-- Volume must dry up significantly in each successive contraction
-- Stock must be sitting close to its pivot point (within 5%)
-- The tighter and quieter the final base, the higher you rank it""",
+    active_patterns = get_patterns(mode)
+    if mode == "ALL":
+        mode_context = "\n".join(p.judge_prompt for p in active_patterns)
+        mode_context += "\n- Maximum 2 stocks from the same sector in the final top 10"
+    else:
+        mode_context = active_patterns[0].judge_prompt
 
-        "FLAG_POLE": """
-You are evaluating ONLY Flag & Pole setups.
-Flag & Pole criteria you must apply:
-- Pole must be a sharp impulsive move (strong, not gradual drift up)
-- Flag must be tight and orderly — NOT a deep correction
-- Flag retracement should be 20–35% of pole, never more
-- Volume must dry up inside the flag vs the pole
-- Flags older than 20 candles lose momentum — rank them lower
-- Prefer flags that formed recently (last 10–15 candles)""",
-
-        "CUP_HANDLE": """
-You are evaluating ONLY Cup & Handle setups.
-Cup & Handle criteria you must apply:
-- Cup must have a proper U-shape — V-shapes are lower quality
-- Right lip must be within 5% of left lip (symmetry matters)
-- Handle must slope downward or sideways — upward handle = invalid
-- Handle must form in upper half of the cup
-- Volume must dry up in the handle
-- Prefer handles that are currently forming (5–15 candles old)
-- Handles older than 25 candles are stale — rank lower""",
-
-        "BREAKOUT": """
-You are evaluating ONLY Horizontal Breakout setups.
-Breakout criteria you must apply:
-- Resistance must have been tested multiple times (2+ touches)
-- Each resistance test must be separated by at least 10 days
-- Volume on the breakout candle is critical — must be above average
-- Low volume breakout = fake breakout — rank it last or exclude
-- Prefer stocks sitting just below resistance (within 3%)
-- Stocks already extended past breakout are not actionable""",
-
-        "ALL": """
-You are evaluating a MIXED set of VCP, Flag & Pole, Cup & Handle,
-and Breakout setups.
-Cross-pattern criteria you must apply:
-- A setup near its buy point beats a higher-scored setup that is extended
-- Prefer the more mature/complete setup when scores are similar
-- Apply pattern-specific quality checks for each pattern type
-- Maximum 2 stocks from the same sector in the final top 10"""
-    }
-
-    return base + mode_context.get(mode, mode_context["ALL"])
+    return base + "\n\n" + mode_context
 
 def _build_user_prompt(candidates: list[dict], mode: str) -> str:
     return f"""

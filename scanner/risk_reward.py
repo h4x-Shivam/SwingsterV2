@@ -12,34 +12,17 @@ from typing import Optional
 from scanner.models import Candle, RiskReward
 
 
-# ---------------------------------------------------------------------------
-# Score breakpoints: (rr_ratio, score) — linear interpolation
-# ---------------------------------------------------------------------------
-_BREAKPOINTS: list[tuple[float, float]] = [
-    (0.0,   0.0),
-    (1.0,   0.0),
-    (2.0,  30.0),
-    (3.0,  60.0),
-    (4.0,  80.0),
-    (5.0, 100.0),
-]
+import logging
 
+logger = logging.getLogger(__name__)
 
-def _interpolate_score(ratio: float) -> float:
-    """Map RR ratio → 0–100 score."""
-    if ratio <= _BREAKPOINTS[0][0]:
-        return _BREAKPOINTS[0][1]
-    if ratio >= _BREAKPOINTS[-1][0]:
-        return _BREAKPOINTS[-1][1]
-
-    for i in range(len(_BREAKPOINTS) - 1):
-        x0, y0 = _BREAKPOINTS[i]
-        x1, y1 = _BREAKPOINTS[i + 1]
-        if x0 <= ratio <= x1:
-            t = (ratio - x0) / (x1 - x0) if (x1 - x0) > 0 else 0
-            return y0 + t * (y1 - y0)
-
-    return 0.0
+def _rr_to_score(ratio: float) -> float:
+    if ratio < 0.8:  return 0.0
+    if ratio < 1.5:  return 20.0
+    if ratio < 2.0:  return 45.0
+    if ratio < 3.0:  return 70.0
+    if ratio < 4.0:  return 85.0
+    return 100.0
 
 
 def _find_swing_low(candles: list[Candle], n: int = 3) -> Optional[float]:
@@ -94,25 +77,15 @@ def _find_swing_high_above(candles: list[Candle], current_price: float, n: int =
 
 def compute_risk_reward(
     candles: list[Candle],
-    buy_point: Optional[float] = None,
+    rr_hard_minimum: float = 0.8,
 ) -> RiskReward:
     """
     Compute risk-reward metrics for the symbol.
-
-    When *buy_point* is provided (the pattern-derived entry trigger),
-    all calculations are anchored to it:
-      • stop_loss  — 1 % buffer below the nearest swing low
-      • target     — nearest swing high **above buy_point**
-      • R:R ratio  — (target − buy_point) / (buy_point − stop_loss)
-
-    Returns defaults (ratio=0, score=0) when fewer than 10 candles
-    are available.
     """
     if len(candles) < 10:
         return RiskReward()
 
-    current_price = candles[-1].close
-    entry = buy_point if buy_point is not None else current_price
+    entry = candles[-1].close
 
     # Support: most recent swing low (n=3, lookback 20 candles)
     support = _find_swing_low(candles)
@@ -124,41 +97,54 @@ def compute_risk_reward(
     # Stop loss: 1% buffer below support
     stop_loss = support * 0.99
 
-    # Ensure stop_loss is below entry; if not, the setup is invalid
+    # HARD GUARD — stop must always be BELOW entry
     if stop_loss >= entry:
-        return RiskReward(
-            support=round(support, 2),
-            resistance=0.0,
-            stop_loss=round(stop_loss, 2),
-            target=0.0,
-            ratio=0.0,
-            score=0.0,
-        )
+        stop_loss = min(c.low for c in candles[-20:]) * 0.99
+        logger.debug(f"Inverted stop detected, using fallback stop: {stop_loss:.2f}")
 
-    # Resistance / target: nearest swing high **above entry (buy_point)**
+    # Resistance / target: nearest swing high above entry
     resistance = _find_swing_high_above(candles, entry)
     if resistance is None:
-        # Measured-move fallback: entry + 2× risk (guarantees a 2:1 R:R)
-        risk = entry - stop_loss
-        resistance = entry + risk * 2.0
+        resistance = entry * 1.15
 
     # Target: resistance level
     target = resistance
 
-    # RR ratio: (target - entry) / (entry - stop_loss)
-    denominator = entry - stop_loss
-    if denominator <= 0:
-        ratio = 0.0
-    else:
-        ratio = (target - entry) / denominator
+    # HARD GUARD — target must always be ABOVE entry
+    if target <= entry:
+        target = entry * 1.15
+        logger.debug(f"Inverted target detected, using fallback target: {target:.2f}")
 
-    ratio = max(ratio, 0.0)
+    risk   = entry - stop_loss
+    reward = target - entry
 
-    score = _interpolate_score(ratio)
+    if risk <= 0:
+        return RiskReward(
+            support=round(support, 2) if support else 0.0,
+            resistance=round(resistance, 2) if resistance else 0.0,
+            stop_loss=round(stop_loss, 2),
+            target=round(target, 2),
+            ratio=0.0,
+            score=0.0,
+        )
+
+    ratio = reward / risk
+
+    if ratio < rr_hard_minimum:
+        return RiskReward(
+            support=round(support, 2) if support else 0.0,
+            resistance=round(resistance, 2) if resistance else 0.0,
+            stop_loss=round(stop_loss, 2),
+            target=round(target, 2),
+            ratio=round(ratio, 2),
+            score=0.0,
+        )
+
+    score = _rr_to_score(ratio)
 
     return RiskReward(
-        support=round(support, 2),
-        resistance=round(resistance, 2),
+        support=round(support, 2) if support else 0.0,
+        resistance=round(resistance, 2) if resistance else 0.0,
         stop_loss=round(stop_loss, 2),
         target=round(target, 2),
         ratio=round(ratio, 2),

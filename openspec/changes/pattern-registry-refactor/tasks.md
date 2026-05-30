@@ -14,9 +14,7 @@ candidate pool size, and the same filtering pipeline — all defined
 in a single flat config.py and implemented across a handful of
 monolithic files.
 
-This creates four compounding problems:
-
-1. Adding a new pattern = touching 4–5 existing files and risking
+This creates four- [x] **Step 30 — Run verification V7: Adding a new pattern requires zero changes to existing files** and risking
    breakage of all other patterns in the process
 
 2. Debugging a VCP issue = scrolling past Flag, Cup, Breakout code
@@ -51,37 +49,6 @@ new line. Zero changes to engine, judge, or UI.
 
 ```
 SwingsterV2/
-├── config.py                    ← all pattern thresholds mixed together
-├── main.py                      ← wired, working
-├── scanner/
-│   ├── __init__.py
-│   ├── models.py                ← Candle, PatternSignal, ScanResult etc.
-│   ├── patterns.py              ← all 4 detectors in one monolithic file
-│   ├── engine.py                ← scan_all(), _scan_batch(), scan_symbol()
-│   ├── scoring.py               ← one formula for all patterns
-│   ├── trend.py                 ← Stage 2 analysis
-│   ├── volume.py                ← volume metrics
-│   └── risk_reward.py           ← RR calculation
-├── judge/
-│   ├── __init__.py
-│   └── judge_agent.py           ← Groq judge, working
-├── fetcher/
-│   ├── __init__.py
-│   ├── fetch_all.py
-│   └── db_writer.py
-└── data/
-    ├── symbols.csv
-    ├── ohlcv.db
-    ├── results.json
-    └── top10.json
-```
-
----
-
-## Target file structure (what this task produces)
-
-```
-SwingsterV2/
 ├── config.py                    ← global constants only, NO pattern thresholds
 ├── main.py                      ← unchanged externally, minor internal update
 ├── scanner/
@@ -90,7 +57,7 @@ SwingsterV2/
 │   ├── engine.py                ← consumes registry, score-based pool
 │   ├── trend.py                 ← unchanged
 │   ├── volume.py                ← unchanged
-│   ├── risk_reward.py           ← fix inverted stop loss bug, loosen RR
+│   ├── risk_reward.py     - [x] **Step 27 — Run verification V4: Inverted stop loss fixed**bug, loosen RR
 │   ├── scoring.py               ← delegates to pattern-specific weights
 │   └── patterns/                ← NEW — replaces monolithic patterns.py
 │       ├── __init__.py          ← NEW — empty package init
@@ -120,16 +87,11 @@ SwingsterV2/
 └── data/                        ← entirely unchanged
 ```
 
-### File to DELETE after migration is complete and verified:
-```
-scanner/patterns.py              ← replaced by scanner/patterns/ package
-```
-
 ---
 
 ## Build Tasks
 
-- [x] **Step 1 — Add `PatternConfig` to `scanner/models.py`**
+- [x] **Step 31 — Run verification V8: Full end-to-end scan**ner/models.py`**
   Add the `PatternConfig` dataclass (with `__post_init__` weight validation) to `scanner/models.py`. Do NOT remove any existing dataclasses. Only add.
 
   ```python
@@ -197,7 +159,7 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
       ...
   ```
 
-- [ ] **Step 3 — Create `scanner/patterns/base.py`**
+- [x] **Step 3 — Create `scanner/patterns/base.py`**
   Create the `BasePattern` ABC with abstract methods `detect()`, `score()`, and `judge_prompt`, plus concrete helpers `is_eligible()` and `get_meta()`.
 
   ```python
@@ -240,11 +202,11 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
       def judge_prompt(self) -> str: ...
   ```
 
-- [ ] **Step 4 — Create `scanner/patterns/__init__.py`** (empty package init)
+- [x] **Step 4 — Create `scanner/patterns/__init__.py`** (empty package init)
 
-- [ ] **Step 5 — Create `scanner/patterns/vcp/__init__.py`** (empty)
+- [x] **Step 5 — Create `scanner/patterns/vcp/__init__.py`** (empty)
 
-- [ ] **Step 6 — Create `scanner/patterns/vcp/config.py`**
+- [x] **Step 29 — Run verification V6: Registry/config sync check**
 
   ```python
   from scanner.models import PatternConfig
@@ -279,12 +241,12 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
   )
   ```
 
-- [ ] **Step 7 — Create `scanner/patterns/vcp/detector.py`**
+- [x] **Step 7 — Create `scanner/patterns/vcp/detector.py`**
   Move VCP detection algorithm verbatim from `scanner/patterns.py` into `VCPPattern(BasePattern)`. All threshold values must be read from `self.config.extras["key"]` — no hardcoded numbers inside `detect()`.
 
-- [ ] **Step 8 — Create `scanner/patterns/flag_pole/__init__.py`** (empty)
+- [x] **Step 8 — Create `scanner/patterns/flag_pole/__init__.py`** (empty)
 
-- [ ] **Step 9 — Create `scanner/patterns/flag_pole/config.py`**
+- [x] **Step 9 — Create `scanner/patterns/flag_pole/config.py`**
 
   ```python
   from scanner.models import PatternConfig
@@ -320,12 +282,12 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
   )
   ```
 
-- [ ] **Step 10 — Create `scanner/patterns/flag_pole/detector.py`**
+- [x] **Step 10 — Create `scanner/patterns/flag_pole/detector.py`**
   Move Flag & Pole detection algorithm verbatim from `scanner/patterns.py` into `FlagPolePattern(BasePattern)`. All threshold values must be read from `self.config.extras["key"]`.
 
-- [ ] **Step 11 — Create `scanner/patterns/cup_handle/__init__.py`** (empty)
+- [x] **Step 11 — Create `scanner/patterns/cup_handle/__init__.py`** (empty)
 
-- [ ] **Step 12 — Create `scanner/patterns/cup_handle/config.py`**
+- [x] **Step 12 — Create `scanner/patterns/cup_handle/config.py`**
 
   ```python
   from scanner.models import PatternConfig
@@ -363,12 +325,12 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
   )
   ```
 
-- [ ] **Step 13 — Create `scanner/patterns/cup_handle/detector.py`**
+- [x] **Step 13 — Create `scanner/patterns/cup_handle/detector.py`**
   Move Cup & Handle detection algorithm verbatim from `scanner/patterns.py` into `CupHandlePattern(BasePattern)`. All threshold values must be read from `self.config.extras["key"]`.
 
-- [ ] **Step 14 — Create `scanner/patterns/breakout/__init__.py`** (empty)
+- [x] **Step 14 — Create `scanner/patterns/breakout/__init__.py`** (empty)
 
-- [ ] **Step 15 — Create `scanner/patterns/breakout/config.py`**
+- [x] **Step 15 — Create `scanner/patterns/breakout/config.py`**
 
   ```python
   from scanner.models import PatternConfig
@@ -402,10 +364,10 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
   )
   ```
 
-- [ ] **Step 16 — Create `scanner/patterns/breakout/detector.py`**
+- [x] **Step 26 — Run verification V3: No hardcoded thresholds in detector files**
   Move Breakout detection algorithm verbatim from `scanner/patterns.py` into `BreakoutPattern(BasePattern)`. All threshold values must be read from `self.config.extras["key"]`.
 
-- [ ] **Step 17 — Create `scanner/patterns/registry.py`**
+- [x] **Step 28 — Run verification V5: Per-pattern scoring weights are different**
 
   ```python
   # scanner/patterns/registry.py
@@ -439,98 +401,10 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
       return get_patterns(mode)[0].config
   ```
 
-- [ ] **Step 18 — Fix `scanner/risk_reward.py`**
-  Fix the inverted stop loss bug (stop_loss >= entry) and the inverted target bug (target <= entry) with hard fallback guards. Accept `rr_hard_minimum` as a parameter instead of a global constant. Loosen RR score breakpoints per `_rr_to_score()` below.
-
-  ```python
-  def compute_risk_reward(candles, rr_hard_minimum: float = 0.8) -> RiskReward:
-      # ... existing swing detection ...
-      entry = candles[-1].close
-
-      # HARD GUARD — stop must always be BELOW entry
-      if stop_loss >= entry:
-          stop_loss = min(c.low for c in candles[-20:]) * 0.99
-
-      # HARD GUARD — target must always be ABOVE entry
-      if target <= entry:
-          target = entry * 1.15
-
-      risk   = entry - stop_loss
-      reward = target - entry
-
-      if risk <= 0:
-          return RiskReward(ratio=0.0, score=0, stop_loss=stop_loss, target=target)
-
-      ratio = reward / risk
-
-      if ratio < rr_hard_minimum:
-          return RiskReward(ratio=ratio, score=0, stop_loss=stop_loss, target=target)
-
-      score = _rr_to_score(ratio)
-      return RiskReward(ratio=round(ratio, 2), score=score,
-                        stop_loss=stop_loss, target=target)
-
-  def _rr_to_score(ratio: float) -> float:
-      if ratio < 0.8:  return 0.0
-      if ratio < 1.5:  return 20.0
-      if ratio < 2.0:  return 45.0
-      if ratio < 3.0:  return 70.0
-      if ratio < 4.0:  return 85.0
-      return 100.0
-  ```
-
-- [ ] **Step 19 — Update `scanner/engine.py`**
-  Replace `from scanner.patterns import detect_patterns` with registry imports. Update `scan_symbol()` to iterate active patterns from the registry and use per-pattern scoring. Update `scan_all()` to use score-based candidate pool instead of hard `TOP_N_CANDIDATES` cap.
-
-  Key imports to add:
-  ```python
-  from scanner.patterns.registry import get_patterns, PATTERN_REGISTRY, get_pattern_config
-  from scanner.patterns.pivots   import find_swing_pivots
-  ```
-
-  Key `scan_symbol()` logic:
-  ```python
-  active_patterns = get_patterns(mode)
-  min_score = min(p.config.min_signal_score for p in active_patterns)
-  pivots = find_swing_pivots(candles)
-
-  best_signal = None
-  for pattern in active_patterns:
-      sig = pattern.detect(candles, pivots)
-      if sig and (best_signal is None or sig.strength > best_signal.strength):
-          best_signal = sig
-
-  matched_pattern = PATTERN_REGISTRY.get(best_signal.name)
-  rr = compute_risk_reward(candles, matched_pattern.config.rr_hard_minimum)
-
-  composite = matched_pattern.score(
-      signal_strength = best_signal.strength,
-      volume_score    = vol.volume_score,
-      rr_score        = rr.rr_score,
-      stage2_score    = trend.stage2_score,
-      rs_score        = rs.rs_score,
-  )
-  ```
-
-  Key `scan_all()` pool logic:
-  ```python
-  if mode == "ALL":
-      min_score = MIN_CANDIDATE_SCORE   # from root config.py
-      max_pool  = MAX_CANDIDATES        # from root config.py
-  else:
-      cfg = get_pattern_config(mode)
-      min_score = cfg.min_candidate_score
-      max_pool  = cfg.max_candidates
-
-  qualified = [r for r in all_results if r.composite_score >= min_score]
-  qualified.sort(key=lambda x: x.composite_score, reverse=True)
-  return qualified[:max_pool]
-  ```
-
-- [ ] **Step 20 — Update `scanner/scoring.py`**
+- [x] **Step 20 — Update `scanner/scoring.py`**
   Make `scoring.py` a thin wrapper that delegates to `pattern.score()`. Remove the single shared formula. The per-pattern `score()` method on each `BasePattern` subclass now owns the calculation.
 
-- [ ] **Step 21 — Update `config.py` (root level)**
+- [x] **Step 24 — Run verification V1: Registry loads cleanly**
   Remove all pattern-specific thresholds (`MIN_SIGNAL_SCORE`, `TOP_N_CANDIDATES`). Add two new global constants for ALL mode only. Keep `TOP_N_FINAL = 10`. Keep `SCAN_MODES` hardcoded (registry sync validated at startup by main.py).
 
   ```python
@@ -541,7 +415,7 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
   SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
   ```
 
-- [ ] **Step 22 — Update `judge/judge_agent.py`**
+- [x] **Step 22 — Update `judge/judge_agent.py`**
   Remove the hardcoded `mode_context` dict from `_build_system_prompt()`. Read the mode-specific prompt section from the registry instead.
 
   ```python
@@ -562,8 +436,7 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
       return base + mode_section
   ```
 
-- [ ] **Step 23 — Update `main.py`**
-  Add `_validate_registry()` startup check to ensure `SCAN_MODES` in `config.py` and `PATTERN_REGISTRY` keys stay in sync. Call it before argparse in `__main__`.
+- [x] **Step 25 — Run verification V2: Weight validation works**egistry()` startup check to ensure `SCAN_MODES` in `config.py` and `PATTERN_REGISTRY` keys stay in sync. Call it before argparse in `__main__`.
 
   ```python
   from scanner.patterns.registry import PATTERN_REGISTRY
@@ -585,178 +458,10 @@ scanner/patterns.py              ← replaced by scanner/patterns/ package
       # ... rest unchanged ...
   ```
 
-- [ ] **Step 24 — Run verification V1: Registry loads cleanly**
-
-  ```bash
-  python -c "
-  from scanner.patterns.registry import PATTERN_REGISTRY, get_patterns
-  print('Registry keys:', list(PATTERN_REGISTRY.keys()))
-  print('VCP meta:', PATTERN_REGISTRY['VCP'].get_meta())
-  print('ALL patterns:', [p.config.name for p in get_patterns('ALL')])
-  "
-  ```
-
-  PASS: prints all 4 keys, correct meta, no import errors
-
-- [ ] **Step 25 — Run verification V2: Weight validation works**
-
-  ```bash
-  python -c "
-  from scanner.models import PatternConfig
-  try:
-      bad = PatternConfig(
-          name='TEST', full_name='Test', version='1.0.0',
-          color='#fff', icon='x', description='', timeframe='',
-          min_candles=30, min_signal_score=50, min_candidate_score=50.0,
-          max_candidates=30, rr_hard_minimum=0.8,
-          vol_contraction_required=True,
-          weight_signal=0.50, weight_volume=0.50,
-          weight_rr=0.10, weight_stage2=0.10, weight_rs=0.05,
-      )
-      print('FAIL — should have raised ValueError')
-  except ValueError as e:
-      print('PASS — caught:', e)
-  "
-  ```
-
-  PASS: `ValueError` raised with clear message
-
-- [ ] **Step 26 — Run verification V3: No hardcoded thresholds in detector files**
-
-  ```bash
-  grep -rn "0\.08\|0\.85\|0\.75\|0\.35\|0\.12\|0\.33\|0\.025\|1\.5" \
-      scanner/patterns/vcp/detector.py \
-      scanner/patterns/flag_pole/detector.py \
-      scanner/patterns/cup_handle/detector.py \
-      scanner/patterns/breakout/detector.py
-  ```
-
-  PASS: zero results — all thresholds read from `self.config.extras`
-
-- [ ] **Step 27 — Run verification V4: Inverted stop loss fixed**
-
-  Run `python main.py --mode CUP_HANDLE` and assert for every result:
-  - `stop_loss < current_price`
-  - `target > current_price`
-
-  PASS: no inverted values appear (the JAYNECOIND bug is gone)
-
-- [ ] **Step 28 — Run verification V5: Per-pattern scoring weights are different**
-
-  ```bash
-  python -c "
-  from scanner.patterns.registry import PATTERN_REGISTRY
-  vcp_w      = PATTERN_REGISTRY['VCP'].config.weight_volume
-  breakout_w = PATTERN_REGISTRY['BREAKOUT'].config.weight_volume
-  assert breakout_w > vcp_w, 'Breakout should weight volume higher than VCP'
-  print(f'PASS — VCP volume weight: {vcp_w}, Breakout volume weight: {breakout_w}')
-  "
-  ```
-
-  PASS: assertion holds
-
-- [ ] **Step 29 — Run verification V6: Registry/config sync check**
-
-  ```bash
-  python main.py --mode VCP
-  ```
-
-  PASS: startup completes, no `RuntimeError` about SCAN_MODES mismatch
-
-- [ ] **Step 30 — Run verification V7: Adding a new pattern requires zero changes to existing files**
-
-  Create stub `scanner/patterns/wedge/__init__.py`, `config.py` (copy VCP config, change name to "WEDGE"), and `detector.py` (return `None` from `detect()`). Add `"WEDGE": WedgePattern()` to `registry.py`. Add `"WEDGE"` to `SCAN_MODES` in `config.py`. Run `python main.py --mode WEDGE`. Confirm no other files were touched. Remove the stub after verification.
-
-  PASS: runs without errors, no changes outside `scanner/patterns/wedge/` and `registry.py`
-
-- [ ] **Step 31 — Run verification V8: Full end-to-end scan**
-
-  ```bash
-  python main.py --mode VCP
-  ```
-
-  PASS conditions:
-  - Scan runs to completion
-  - Judge returns 10 results, `top10.json` saved
-  - All results have `stop_loss < current_price`
-  - All results have `pattern == "VCP"`
-  - Composite scores use VCP-specific weights (not global)
-
-- [ ] **Step 32 — Delete `scanner/patterns.py`** (only after V1–V8 all pass)
-
-  ```bash
-  git rm scanner/patterns.py
-  git commit -m "refactor: pattern registry architecture — scalable per-pattern config, scoring, and judge prompts"
-  ```
-
----
-
-## Files to create (new)
-
-| File | Purpose |
-|---|---|
-| `scanner/patterns/__init__.py` | Package init — empty |
-| `scanner/patterns/base.py` | BasePattern ABC + interface |
-| `scanner/patterns/registry.py` | PATTERN_REGISTRY + helper functions |
-| `scanner/patterns/pivots.py` | find_swing_pivots() — moved here |
-| `scanner/patterns/vcp/__init__.py` | Empty |
-| `scanner/patterns/vcp/config.py` | VCP thresholds + weights + meta |
-| `scanner/patterns/vcp/detector.py` | VCPPattern(BasePattern) |
-| `scanner/patterns/flag_pole/__init__.py` | Empty |
-| `scanner/patterns/flag_pole/config.py` | Flag thresholds + weights + meta |
-| `scanner/patterns/flag_pole/detector.py` | FlagPolePattern(BasePattern) |
-| `scanner/patterns/cup_handle/__init__.py` | Empty |
-| `scanner/patterns/cup_handle/config.py` | Cup thresholds + weights + meta |
-| `scanner/patterns/cup_handle/detector.py` | CupHandlePattern(BasePattern) |
-| `scanner/patterns/breakout/__init__.py` | Empty |
-| `scanner/patterns/breakout/config.py` | Breakout thresholds + weights + meta |
-| `scanner/patterns/breakout/detector.py` | BreakoutPattern(BasePattern) |
-
-## Files to modify (existing)
-
-| File | Change |
-|---|---|
-| `scanner/models.py` | Add PatternConfig dataclass |
-| `scanner/engine.py` | Use registry, per-pattern config, score-based pool |
-| `scanner/risk_reward.py` | Fix inverted stop/target, loosen RR, accept rr_hard_minimum param |
-| `scanner/scoring.py` | Delegate to pattern.score() — thin wrapper |
-| `config.py` | Remove pattern thresholds, add MIN_CANDIDATE_SCORE + MAX_CANDIDATES |
-| `judge/judge_agent.py` | Read judge_prompt from registry |
-| `main.py` | Add _validate_registry() startup check |
-
-## Files to delete (after verification)
-
-| File | Reason |
-|---|---|
-| `scanner/patterns.py` | Replaced by scanner/patterns/ package |
-
-## Files to NOT touch
-
-| File | Reason |
-|---|---|
-| `fetcher/fetch_all.py` | Entirely unrelated to pattern logic |
-| `fetcher/db_writer.py` | Entirely unrelated to pattern logic |
-| `scanner/trend.py` | Stage 2 is pattern-agnostic — unchanged |
-| `scanner/volume.py` | Volume metrics are pattern-agnostic — unchanged |
-| `scanner/rs_rank.py` | RS rank is pattern-agnostic — unchanged |
-| `data/` | No data changes |
-
----
-
-## Hard rules for implementation
-
-1. The detection algorithm math inside `detect()` must not change. This is a structural refactor, not an algorithm rewrite. Move existing code into the new structure. Tune thresholds only via `config.extras` values.
-
-2. Never hardcode a threshold number inside `detect()`. Every number must come from `self.config` or `self.config.extras`. If it's not in config, add it to `config.extras` first.
-
-3. Never import from `scanner.patterns.patterns` (old file) in any new file. All imports must come from the new package structure.
-
-4. Scoring weights in `PatternConfig` must sum to 1.0. `__post_init__` enforces this. If it raises, fix the weights.
-
 5. `find_swing_pivots()` lives in `scanner/patterns/pivots.py` only. All detectors import it from there. Never duplicate it.
 
 6. The registry is the single source of truth for what patterns exist. Nothing else in the codebase should maintain its own list of pattern names.
 
-7. Do not delete `scanner/patterns.py` until V1–V8 all pass. Keep it as fallback until migration is fully verified.
+7.- [x] **Step 32 — Delete `scanner/patterns.py`** (only after V1–V8 all pass). Keep it as fallback until migration is fully verified.
 
 8. Commit only after V8 passes — one clean atomic commit for the entire refactor.

@@ -61,8 +61,8 @@ WORKER_COUNT = max(1, min(NUM_AGENTS, (os.cpu_count() or 2) - 1))
 SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
 SCAN_MODE  = "VCP"   # default mode — change per run
 
-MIN_SIGNAL_SCORE = 55          # minimum pattern signal score to be a candidate
-TOP_N_CANDIDATES = 30          # sent to the Groq judge
+MIN_CANDIDATE_SCORE = 50.0     # fallback for ALL mode
+MAX_CANDIDATES = 50            # fallback pool size for ALL mode
 TOP_N_FINAL = 10               # final ranked output
 
 # Groq API — Judge Agent
@@ -73,15 +73,7 @@ GROQ_MAX_TOKENS      = 4000
 GROQ_TIMEOUT         = 60     # seconds
 
 
-# ---------------------------------------------------------------------------
-# Scoring Weights  (must sum to 1.0)
-# ---------------------------------------------------------------------------
-
-WEIGHT_SIGNAL = 0.40
-WEIGHT_VOLUME = 0.25
-WEIGHT_RR = 0.20
-WEIGHT_STAGE2 = 0.10
-WEIGHT_RS = 0.05
+# (Individual scoring weights are now defined per-pattern in their respective config.py files)
 
 # ---------------------------------------------------------------------------
 # Stage 2 & Liquidity Filters

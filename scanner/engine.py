@@ -20,12 +20,12 @@ from typing import Optional
 
 from config import (
     NUM_AGENTS,
-    MIN_SIGNAL_SCORE,
-    TOP_N_CANDIDATES,
     STAGE2_MIN_SCORE,
     WORKER_COUNT,
     SCAN_MODES,
     SCAN_MODE,
+    MIN_CANDIDATE_SCORE,
+    MAX_CANDIDATES,
 )
 from fetcher.db_writer import (
     read_ohlcv,
@@ -37,10 +37,10 @@ from fetcher.db_writer import (
 from scanner.models import Candle, ScanResult, rows_to_candles
 from scanner.trend import analyze_trend
 from scanner.volume import analyze_volume
-from scanner.patterns import detect_patterns
+from scanner.patterns.registry import get_patterns, PATTERN_REGISTRY, get_pattern_config
+from scanner.patterns.pivots   import find_swing_pivots
 from scanner.rs_rank import compute_rs
 from scanner.risk_reward import compute_risk_reward
-from scanner.scoring import compute_composite_score
 
 
 logger = logging.getLogger(__name__)
@@ -89,6 +89,9 @@ def scan_symbol(
     if len(candles) < 30:
         return None
 
+    # get active patterns for this mode
+    active_patterns = get_patterns(mode)
+
     # 3. Stage 2 trend filter — skip if score < 60
     trend = analyze_trend(candles)
     if trend.stage2_score < STAGE2_MIN_SCORE:
@@ -99,48 +102,62 @@ def scan_symbol(
     if vol.is_illiquid:
         return None
 
-    # 5. Pattern detection — skip if None
-    signal = detect_patterns(candles, mode=mode)
-    if signal is None:
+    # per-pattern filtering — use each pattern's own config
+    # for ALL mode: use the strictest min_signal_score across patterns
+    min_score = min(p.config.min_signal_score for p in active_patterns)
+
+    pivots = find_swing_pivots(candles)
+
+    # run detectors — only for active patterns
+    best_signal = None
+    for pattern in active_patterns:
+        sig = pattern.detect(candles, pivots)
+        if sig and (best_signal is None or sig.strength > best_signal.strength):
+            best_signal = sig
+
+    if best_signal is None or best_signal.strength < min_score:
+        return None
+
+    # get the matched pattern instance for scoring
+    matched_pattern = PATTERN_REGISTRY.get(best_signal.name)
+    if not matched_pattern:
         return None
 
     # 6. RS rank vs Nifty 50
     nifty = nifty_candles if nifty_candles is not None else _load_nifty_candles()
     rs = compute_rs(candles, nifty)
 
-    # 7. Risk-reward — anchored to the pattern's buy_point
-    rr = compute_risk_reward(candles, buy_point=signal.buy_point)
+    # 7. Risk-reward — anchored to the pattern's config
+    rr = compute_risk_reward(candles, matched_pattern.config.rr_hard_minimum)
 
     # Gate: reject setups where risk-reward is invalid
-    #   (stop_loss above entry, or no upside after accounting for entry)
-    if rr.stop_loss >= signal.buy_point or rr.ratio <= 0:
+    if rr.ratio <= 0:
         return None
 
     # 8. Composite score
-    composite = compute_composite_score(
-        signal_strength=signal.strength,
+    composite = matched_pattern.score(
+        signal_strength=best_signal.strength,
         volume_score=vol.volume_score,
         rr_score=rr.score,
         stage2_score=trend.stage2_score,
         rs_score=rs.rs_score,
-        is_stage2=trend.is_stage2,
     )
 
     return ScanResult(
         symbol=symbol,
-        pattern=signal.name,
-        signal_strength=signal.strength,
+        pattern=best_signal.name,
+        signal_strength=best_signal.strength,
         volume_score=vol.volume_score,
         rr_score=rr.score,
         stage2_score=trend.stage2_score,
         rs_score=rs.rs_score,
         composite_score=composite,
-        buy_point=signal.buy_point,
+        buy_point=best_signal.buy_point,
         stop_loss=rr.stop_loss,
         target=rr.target,
         rr_ratio=rr.ratio,
         current_price=candles[-1].close,
-        distance_from_buy_pct=signal.distance_from_buy_pct,
+        distance_from_buy_pct=best_signal.distance_from_buy_pct,
         scan_mode=mode,
     )
 
@@ -288,14 +305,22 @@ def scan_all(
 
     count_pattern = len(results)
 
-    # Filter by MIN_SIGNAL_SCORE
-    results = [r for r in results if r.composite_score >= MIN_SIGNAL_SCORE]
+    if mode == "ALL":
+        min_score = MIN_CANDIDATE_SCORE
+        max_pool  = MAX_CANDIDATES
+    else:
+        cfg = get_pattern_config(mode)
+        min_score = cfg.min_candidate_score
+        max_pool  = cfg.max_candidates
+
+    # Filter by min_candidate_score
+    results = [r for r in results if r.composite_score >= min_score]
 
     # Sort descending by composite score, then ascending by symbol to guarantee deterministic order
     results.sort(key=lambda r: (-r.composite_score, r.symbol))
 
-    # Cap at TOP_N_CANDIDATES
-    results = results[:TOP_N_CANDIDATES]
+    # Cap at max_pool
+    results = results[:max_pool]
 
     elapsed = time.perf_counter() - t0
 
@@ -308,10 +333,9 @@ def scan_all(
 
     logger.info(
         "Scan complete | Scanned: %d | Patterns found: %d | "
-        "Candidates (score>=%d): %d | Time: %.1fs",
+        "Candidates: %d | Time: %.1fs",
         total_eligible,
         count_pattern,
-        MIN_SIGNAL_SCORE,
         len(results),
         elapsed,
     )

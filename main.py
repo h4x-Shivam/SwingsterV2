@@ -6,8 +6,19 @@ from config import SCAN_MODE, SCAN_MODES
 from scanner.engine import scan_all
 from judge.judge_agent import run_judge, save_top10
 
+def _validate_registry():
+    from scanner.patterns.registry import PATTERN_REGISTRY
+    registry_keys = set(PATTERN_REGISTRY.keys())
+    modes = set(SCAN_MODES) - {"ALL"}
+    if registry_keys != modes:
+        raise RuntimeError(
+            f"Config/Registry mismatch!\n"
+            f"SCAN_MODES (sans ALL): {modes}\n"
+            f"PATTERN_REGISTRY keys: {registry_keys}"
+        )
 
 if __name__ == "__main__":
+    _validate_registry()
     parser = argparse.ArgumentParser(description="SwingsterV2 Scanner")
     parser.add_argument(
         "--mode",
