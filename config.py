@@ -63,7 +63,6 @@ SCAN_MODE  = "VCP"   # default mode — change per run
 
 MIN_CANDIDATE_SCORE = 50.0     # fallback for ALL mode
 MAX_CANDIDATES = 50            # fallback pool size for ALL mode
-TOP_N_FINAL = 10               # final ranked output
 
 # Groq API — Judge Agent
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")

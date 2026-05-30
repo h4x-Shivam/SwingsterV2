@@ -4,7 +4,7 @@ import sys
 import os
 from config import SCAN_MODE, SCAN_MODES
 from scanner.engine import scan_all
-from judge.judge_agent import run_judge, save_top10
+from judge.judge_agent import run_judge, save_final_picks
 
 def _validate_registry():
     from scanner.patterns.registry import PATTERN_REGISTRY
@@ -49,14 +49,14 @@ if __name__ == "__main__":
     # Wire judge
     print(f"\nSending {len(candidates_dict)} candidates to Groq judge...")
     sys.stdout.flush()
-    top10 = run_judge(candidates_dict, mode=args.mode)
-    save_top10(top10, mode=args.mode)
+    final_picks = run_judge(candidates_dict, mode=args.mode)
+    save_final_picks(final_picks, mode=args.mode)
     
     # Print judge results
     print(f"\n{'-' * 55}")
-    print(f"  TOP 10 - {args.mode} SETUPS")
+    print(f"  FINAL PICKS - {args.mode} SETUPS")
     print(f"{'-' * 55}")
-    for r in top10:
+    for r in final_picks:
         print(f"\n  #{r['rank']}  {r['symbol']:<12} "
               f"[{r['pattern'].upper():<12}] "
               f"Score: {r['composite_score']:.1f}  "
@@ -69,7 +69,7 @@ if __name__ == "__main__":
         if r['flags']:
             print(f"      WARNING: {r['flags']}")
     print(f"\n{'-' * 55}")
-    print(f"Full results -> data/top10.json")
+    print(f"Full results -> data/final_picks.json")
     sys.stdout.flush()
 
 

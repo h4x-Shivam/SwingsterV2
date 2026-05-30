@@ -28,8 +28,9 @@ You receive pre-screened stock candidates that have already passed:
 - Pattern detection algorithm
 - Composite scoring (signal 40% + volume 25% + RR 20% + stage2 10% + rs 5%)
 
-Your job is to apply qualitative judgment on top of quantitative
-scores and select the final top 10 setups worth acting on.
+Your job is to act as a qualitative filter. Evaluate the quantitative setups,
+discard any with critical flaws, and return ALL surviving setups that pass
+your qualitative criteria with HIGH or MEDIUM conviction.
 
 CRITICAL: Return ONLY a raw JSON array.
 No explanation. No markdown. No code fences.
@@ -55,7 +56,8 @@ CANDIDATES:
 {json.dumps(candidates, indent=2)}
 
 YOUR TASK:
-Select and rank the TOP 10 best setups from these candidates.
+Evaluate all candidates. Discard any setups that have critical flaws.
+Return ALL surviving candidates, assigning them a conviction level.
 
 Apply ALL of the following criteria in order of importance:
 
@@ -91,7 +93,7 @@ Apply ALL of the following criteria in order of importance:
 QUALITATIVE CHECKS before finalising:
 - For each pick ask: "Would a Minervini-style trader take this trade today?"
   If answer is "maybe" — replace with next best candidate.
-- Check sector concentration across your final 10 before returning.
+- Check sector concentration across your final picks before returning.
 
 RETURN FORMAT — THIS IS CRITICAL FOR GROQ:
 You MUST return ONLY a raw JSON array.
@@ -102,36 +104,18 @@ Do NOT explain your choices outside the JSON
 
 Remember: start with [ end with ] no text outside the array
 
-Each of the 10 objects must have EXACTLY these fields
-(no extra fields, no missing fields):
+Each object must have EXACTLY these fields (no extra fields, no missing fields):
 
 [
-  {{
-    "rank": 1,
+  {
     "symbol": "SYMBOLNAME",
-    "pattern": "vcp",
-    "signal_strength": 79,
-    "volume_score": 85,
-    "rr_ratio": 2.8,
-    "stage2_score": 100,
-    "rs_score": 72,
-    "composite_score": 81.5,
-    "current_price": 2810.50,
-    "buy_point": 2847.50,
-    "stop_loss": 2710.00,
-    "target": 3100.00,
-    "distance_from_buy_pct": 1.32,
     "conviction": "HIGH",
-    "sector": "Energy",
     "judge_verdict": "2–3 sentences on what makes this setup compelling. Must mention pattern type, key strength, proximity to buy point.",
-    "why_ranked_here": "1 sentence on why this rank vs others.",
-    "flags": ""
-  }}
+    "flags": "Warnings like earnings, sector pressure, needs confirmation. Use empty string if none."
+  }
 ]
 
-conviction must be: HIGH or MEDIUM or LOW
-flags: warnings like earnings, sector pressure, needs confirmation.
-       Use empty string "" if no flags.
+conviction must be: HIGH or MEDIUM
 """
 
 def run_judge(candidates: list[dict], mode: str = "ALL") -> list[dict]:
@@ -230,113 +214,82 @@ def _parse_and_validate(raw_text: str, candidates: list[dict]) -> list[dict]:
         logger.error("Response is not a valid non-empty JSON array")
         return _fallback_ranking(candidates)
 
-    # Step 5 — trim if more than 10
-    if len(results) > 10:
-        logger.warning(f"Trimming {len(results)} → 10")
-        results = results[:10]
-
-    # Step 6 — pad if fewer than 10
-    if len(results) < 10:
-        logger.warning(f"Padding results from {len(results)} → 10")
-        existing = {r.get("symbol") for r in results if r.get("symbol")}
-        pool = sorted(
-            [c for c in candidates if c.get("symbol") not in existing],
-            key=lambda x: x.get("composite_score", 0),
-            reverse=True
-        )
-        for i, extra in enumerate(pool[:10 - len(results)]):
-            padded_item = dict(extra)
-            padded_item["rank"] = len(results) + i + 1
-            padded_item["judge_verdict"] = "Auto-added: judge returned fewer than 10."
-            padded_item["why_ranked_here"] = "Padded by composite score fallback."
-            padded_item["flags"] = ""
-            padded_item["sector"] = ""
-            padded_item["conviction"] = padded_item.get("conviction", "LOW")
-            results.append(padded_item)
-
-    # Step 7 — validate all 19 required fields per item
-    required_fields = [
-        "rank", "symbol", "pattern", "signal_strength", "volume_score",
-        "rr_ratio", "stage2_score", "rs_score", "composite_score",
-        "current_price", "buy_point", "stop_loss", "target",
-        "distance_from_buy_pct", "conviction", "sector",
-        "judge_verdict", "why_ranked_here", "flags"
-    ]
-
+    # Step 5 — Map candidates back and restore missing fields
     candidate_lookup = {c.get("symbol"): c for c in candidates}
-
+    
+    final_results = []
     for item in results:
         sym = item.get("symbol", "")
-        original = candidate_lookup.get(sym, {})
-        for field in required_fields:
-            if field not in item or item[field] is None:
-                if field in ("sector", "judge_verdict", "why_ranked_here", "flags"):
-                    item[field] = original.get(field, "")
-                elif field == "conviction":
-                    item[field] = original.get(field, "LOW")
-                elif field in ("symbol", "pattern"):
-                    item[field] = original.get(field, "")
-                else:
-                    item[field] = original.get(field, 0)
-
-        # Step 8 — restore protected fields (judge must never override)
-        protected_fields = ["buy_point", "stop_loss", "target", "rr_ratio"]
-        if sym in candidate_lookup:
-            for field in protected_fields:
-                item[field] = candidate_lookup[sym].get(field, item[field])
-
-    # Step 9 — sector check (log only, do NOT remove items)
-    sector_counts = Counter(r.get("sector", "") for r in results)
+        if sym not in candidate_lookup:
+            logger.warning(f"Judge returned unknown symbol: {sym}")
+            continue # LLM hallucinated a symbol
+        
+        merged = dict(candidate_lookup[sym]) # start with original quantitative data
+        merged["conviction"] = item.get("conviction", "MEDIUM").upper()
+        if merged["conviction"] not in ("HIGH", "MEDIUM"):
+            merged["conviction"] = "MEDIUM"
+        merged["judge_verdict"] = item.get("judge_verdict", "")
+        merged["flags"] = item.get("flags", "")
+        
+        final_results.append(merged)
+        
+    # Step 6 — Sort by Conviction (HIGH > MEDIUM) then Composite Score (desc)
+    def sort_key(x):
+        c = 2 if x.get("conviction") == "HIGH" else 1
+        return (c, x.get("composite_score", 0.0))
+        
+    final_results.sort(key=sort_key, reverse=True)
+    
+    # Step 7 — Assign ranks cleanly
+    for i, item in enumerate(final_results):
+        item["rank"] = i + 1
+        
+    # Step 8 — Sector check (log only)
+    sector_counts = Counter(r.get("sector", "") for r in final_results)
     for sector, count in sector_counts.items():
         if sector and count > 2:
             logger.warning(
                 f"Sector concentration: {sector} appears {count} times "
-                f"in top 10 — judge did not diversify"
+                f"in final picks"
             )
-
-    # Step 10 — re-index ranks cleanly 1–10
-    for i, item in enumerate(results):
-        item["rank"] = i + 1
-
-    return results
+            
+    return final_results
 
 def _fallback_ranking(candidates: list[dict]) -> list[dict]:
     logger = logging.getLogger(__name__)
-    logger.warning("Using fallback ranking — sorted by composite_score")
+    logger.warning("Using fallback ranking — returning all candidates sorted by composite_score")
 
-    top10 = sorted(
+    candidates_sorted = sorted(
         candidates,
         key=lambda x: x.get("composite_score", 0),
         reverse=True
-    )[:10]
+    )
 
     results = []
-    for i, item in enumerate(top10):
+    for i, item in enumerate(candidates_sorted):
         fallback_item = dict(item)
         fallback_item["rank"] = i + 1
-        fallback_item["conviction"] = fallback_item.get("conviction", "LOW")
-        fallback_item["sector"] = fallback_item.get("sector", "")
+        fallback_item["conviction"] = "MEDIUM"
         fallback_item["judge_verdict"] = (
             "Auto-ranked by composite score. "
             "Groq judge unavailable for this run."
         )
-        fallback_item["why_ranked_here"] = f"Ranked #{i+1} by composite score fallback."
         fallback_item["flags"] = "Judge unavailable — manual review recommended."
         results.append(fallback_item)
 
     return results
 
-def save_top10(top10: list[dict], mode: str):
+def save_final_picks(picks: list[dict], mode: str):
     output = {
         "scan_mode": mode,
         "scan_time": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "total_picks": len(top10),
-        "results": top10
+        "total_picks": len(picks),
+        "results": picks
     }
     os.makedirs("data", exist_ok=True)
-    with open("data/top10.json", "w") as f:
+    with open("data/final_picks.json", "w") as f:
         json.dump(output, f, indent=2)
 
     logging.getLogger(__name__).info(
-        f"Top 10 saved → data/top10.json (mode: {mode})"
+        f"Final {len(picks)} picks saved → data/final_picks.json (mode: {mode})"
     )
