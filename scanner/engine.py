@@ -45,6 +45,9 @@ from scanner.risk_reward import compute_risk_reward
 
 logger = logging.getLogger(__name__)
 
+class RejectedRRError(Exception):
+    pass
+
 # ---------------------------------------------------------------------------
 # Cache: Nifty 50 candles (loaded once per scan_all run)
 # ---------------------------------------------------------------------------
@@ -132,7 +135,7 @@ def scan_symbol(
 
     # Gate: reject setups where risk-reward is invalid
     if rr.ratio <= 0:
-        return None
+        raise RejectedRRError(symbol)
 
     # 8. Composite score
     composite = matched_pattern.score(
@@ -166,7 +169,7 @@ def scan_symbol(
 # Top-level Batch Scan Process Worker
 # ---------------------------------------------------------------------------
 
-def _scan_batch(args: tuple) -> tuple[list[ScanResult], int]:
+def _scan_batch(args: tuple) -> tuple[list[ScanResult], int, list[str]]:
     """
     Worker entry point for processing a batch of symbols.
     Opens its own SQLite connection, pre-loads nifty candles, and scans symbols.
@@ -178,17 +181,20 @@ def _scan_batch(args: tuple) -> tuple[list[ScanResult], int]:
         nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
         
         results = []
+        rejected_rr = []
         scanned_count = 0
         for symbol in batch:
             try:
                 res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles, mode=mode)
                 if res is not None:
                     results.append(res)
+            except RejectedRRError:
+                rejected_rr.append(symbol)
             except Exception as e:
                 print(f"[WARN] {symbol}: {e}", file=sys.stderr)
             finally:
                 scanned_count += 1
-        return results, scanned_count
+        return results, scanned_count, rejected_rr
     finally:
         conn.close()
 
@@ -201,7 +207,7 @@ def scan_all(
     mode: str = SCAN_MODE,
     progress_callback=None,
     limit: Optional[int] = None,
-) -> list[ScanResult]:
+) -> tuple[list[ScanResult], int, int, list[str]]:
     """
     Scan every eligible symbol in the database using a process pool.
 
@@ -275,6 +281,7 @@ def scan_all(
 
     t0 = time.perf_counter()
     results: list[ScanResult] = []
+    rejected_rr_list: list[str] = []
     total_eligible = len(eligible_symbols)
     total_scanned = 0
     executor = None
@@ -285,8 +292,9 @@ def scan_all(
             futures = {executor.submit(_scan_batch, args): args for args in worker_args}
             
             for future in as_completed(futures):
-                batch_results, batch_count = future.result()
+                batch_results, batch_count, batch_rejected = future.result()
                 results.extend(batch_results)
+                rejected_rr_list.extend(batch_rejected)
                 total_scanned += batch_count
                 # Call callback if provided
                 if progress_callback is not None:
@@ -340,5 +348,5 @@ def scan_all(
         elapsed,
     )
 
-    return results
+    return results, prefilter["total"], count_pattern, rejected_rr_list
 

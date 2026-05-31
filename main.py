@@ -35,7 +35,7 @@ if __name__ == "__main__":
     sys.stdout.flush()
     
     # 4.3 Call scan_all inside __main__ guard
-    candidates = scan_all(mode=args.mode)
+    candidates, total_scanned, count_pattern, rejected_rr_list = scan_all(mode=args.mode)
     
     candidates_dict = [vars(c) for c in candidates]
     
@@ -44,6 +44,19 @@ if __name__ == "__main__":
     with open("data/results.json", "w") as f:
         json.dump(candidates_dict, f, indent=2)
     print(f"\nFull {len(candidates)} candidates saved -> data/results.json")
+    
+    import datetime
+    summary_data = {
+        "mode": args.mode,
+        "total_scanned": total_scanned,
+        "vcp_found_count": count_pattern,
+        "rejected_by_rr": rejected_rr_list,
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    }
+    with open("data/scan_summary.json", "w") as f:
+        json.dump(summary_data, f, indent=2)
+    print(f"Dynamic metrics saved -> data/scan_summary.json")
+    
     sys.stdout.flush()
     
     # Wire judge
