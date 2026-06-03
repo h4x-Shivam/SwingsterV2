@@ -1,0 +1,80 @@
+@import "tailwindcss";
+@source "../../../apps/**/*.{ts,tsx}";
+@source "../../../components/**/*.{ts,tsx}";
+@source "../**/*.{ts,tsx}";
+
+@theme {
+  --color-accent: #00c896;
+  --color-accent-dim: #00c89640;
+  --color-surface: #060606;
+  --color-surface-raised: #0e0e0e;
+  --color-surface-card: #111111;
+  --color-border-subtle: #1a1a1a;
+  --color-border-muted: #222222;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-gain: #00c896;
+  --color-loss: #ef4444;
+}
+
+/* ─── Scrollbar ─── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #222;
+  border-radius: 3px;
+}
+
+/* ─── Badge pulse ─── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+/* ─── Fade in up ─── */
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}
+
+.animation-delay-100 { animation-delay: 100ms; }
+.animation-delay-200 { animation-delay: 200ms; }
+.animation-delay-300 { animation-delay: 300ms; }
+.animation-delay-400 { animation-delay: 400ms; }
+
+/* ─── Glow effect ─── */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px #00c89615, 0 0 60px #00c89608; }
+  50% { box-shadow: 0 0 30px #00c89625, 0 0 80px #00c89612; }
+}
+
+.animate-glow {
+  animation: glow-pulse 4s ease-in-out infinite;
+}
+
+/* ─── Table row hover ─── */
+.watchlist-row {
+  transition: background-color 0.15s ease;
+}
+.watchlist-row:hover {
+  background-color: #ffffff06;
+}
