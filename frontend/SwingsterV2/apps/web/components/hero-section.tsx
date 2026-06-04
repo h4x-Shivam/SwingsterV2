@@ -3,25 +3,21 @@
 import React from "react";
 import { ContainerScroll } from "@/components/ui/container-scroll-animation";
 import { HeroWatchlist } from "@/components/hero-watchlist";
-import { LiquidEther } from "@/components/ui/liquid-ether";
 
 export function HeroSection() {
   return (
     <section
       id="hero"
-      className="relative w-full bg-surface overflow-hidden"
+      className="relative w-full bg-transparent overflow-hidden"
     >
-      {/* ── Liquid Ether Background ── */}
-      <div className="absolute inset-0 z-0 opacity-60 mix-blend-screen">
-        <LiquidEther
-          colors={['#7C3AED', '#00c896', '#5B21B6']}
-          mouseForce={30}
-          cursorSize={150}
-          isViscous={true}
-          viscous={25}
-          resolution={0.4}
-        />
-      </div>
+      {/* ── Subtle radial gradient glow behind the MacBook ── */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-[40%] -translate-x-1/2 -translate-y-1/2 h-[600px] w-[800px] rounded-full opacity-30"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, #00c89612 0%, transparent 70%)",
+        }}
+      />
 
       <ContainerScroll
         titleComponent={

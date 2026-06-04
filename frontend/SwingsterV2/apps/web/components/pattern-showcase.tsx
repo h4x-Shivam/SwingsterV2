@@ -140,15 +140,14 @@ export function PatternShowcase() {
   return (
     <section
       id="pattern-showcase"
-      className="relative w-full py-20 md:py-32"
-      style={{ background: "#060606" }}
+      className="relative w-full py-20 md:py-32 bg-transparent"
     >
       {/* ── Decorative top gradient divider ── */}
       <div
         className="pointer-events-none absolute inset-x-0 top-0 h-32"
         style={{
           background:
-            "linear-gradient(to bottom, #060606 0%, transparent 100%)",
+            "linear-gradient(to bottom, #0a0a0a 0%, transparent 100%)",
         }}
       />
 
