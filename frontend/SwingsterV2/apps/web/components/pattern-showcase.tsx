@@ -62,8 +62,8 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
               x2="0"
               y2="1"
             >
-              <stop offset="0%" stopColor="#7C3AED" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#7C3AED" stopOpacity={0} />
+              <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
             </linearGradient>
           </defs>
 
@@ -77,11 +77,11 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
           <path
             d={pattern.svgPath}
             fill="none"
-            stroke="#7C3AED"
+            stroke="#10b981"
             strokeWidth={2.5}
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="drop-shadow-[0_0_6px_#7C3AED80]"
+            className="drop-shadow-[0_0_6px_#10b98180]"
           />
         </svg>
       </div>
@@ -100,7 +100,7 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
             e.stopPropagation();
             console.log("Running scan for:", pattern.title);
           }}
-          className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#7C3AED] to-[#5B21B6] py-3.5 text-sm font-semibold tracking-wide text-white shadow-[0_0_20px_rgba(124,58,237,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(124,58,237,0.6)] active:translate-y-0"
+          className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-800 py-3.5 text-sm font-semibold tracking-wide text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] active:translate-y-0"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
@@ -142,23 +142,14 @@ export function PatternShowcase() {
       id="pattern-showcase"
       className="relative w-full py-20 md:py-32 bg-transparent"
     >
-      {/* ── Decorative top gradient divider ── */}
-      <div
-        className="pointer-events-none absolute inset-x-0 top-0 h-32"
-        style={{
-          background:
-            "linear-gradient(to bottom, #0a0a0a 0%, transparent 100%)",
-        }}
-      />
-
       {/* ── Section header ── */}
       <div className="mx-auto max-w-5xl px-6 text-center mb-16">
-        <div className="inline-flex items-center gap-2 rounded-full border border-[#7C3AED30] bg-[#7C3AED08] px-4 py-1.5 mb-6">
+        <div className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-4 py-1.5 mb-6">
           <span
             className="h-2 w-2 rounded-full"
-            style={{ background: "#7C3AED" }}
+            style={{ background: "#ef4444" }}
           />
-          <span className="text-xs font-medium text-[#a78bfa] tracking-wide uppercase">
+          <span className="text-xs font-medium text-red-400 tracking-wide uppercase">
             Pattern Library
           </span>
         </div>
@@ -167,7 +158,7 @@ export function PatternShowcase() {
           <span
             className="bg-clip-text text-transparent"
             style={{
-              backgroundImage: "linear-gradient(135deg, #7C3AED, #a78bfa)",
+              backgroundImage: "linear-gradient(135deg, #10b981, #34d399)",
             }}
           >
             move markets
