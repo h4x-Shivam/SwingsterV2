@@ -78,3 +78,31 @@
 .watchlist-row:hover {
   background-color: #ffffff06;
 }
+
+/* ─── Sticky scroll container ─── */
+.sticky-scroll-container {
+  background-color: #0a0a0a;
+  border: 1px solid #1a1a1a;
+  scrollbar-width: thin;
+  scrollbar-color: #222 transparent;
+}
+.sticky-scroll-container::-webkit-scrollbar {
+  width: 4px;
+}
+.sticky-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.sticky-scroll-container::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 2px;
+}
+
+/* ─── Pattern card ─── */
+.pattern-card {
+  border: 1px solid #1a1a1a;
+  border-radius: 0.375rem;
+  transition: border-color 0.3s ease;
+}
+.pattern-card:hover {
+  border-color: #7C3AED40;
+}
