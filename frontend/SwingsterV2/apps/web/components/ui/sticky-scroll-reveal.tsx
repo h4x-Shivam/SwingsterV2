@@ -1,6 +1,7 @@
 "use client";
 import React, { useRef } from "react";
 import { useMotionValueEvent, useScroll, motion } from "motion/react";
+import { BorderGlow } from "./border-glow";
 
 export const StickyScroll = ({
   content,
@@ -37,43 +38,58 @@ export const StickyScroll = ({
   });
 
   return (
-    <motion.div
-      className="sticky-scroll-container relative flex h-[40rem] justify-center space-x-10 overflow-y-auto rounded-md p-10"
-      ref={ref}
+    <BorderGlow
+      className="w-full h-[40rem]"
+      innerClassName="overflow-hidden h-full w-full"
+      edgeSensitivity={30}
+      glowColor="142 70 50" // Sleek green/teal accent glow
+      backgroundColor="#0a0a0a"
+      borderRadius={8}
+      glowRadius={40}
+      glowIntensity={1.0}
+      coneSpread={25}
+      animated={true}
+      colors={['#10b981', '#059669', '#ef4444']} // Green/red themed gradient border
+      fillOpacity={0.05}
     >
-      <div className="div relative flex items-start px-4">
-        <div className="max-w-2xl">
-          {content.map((item, index) => (
-            <div key={item.title + index} className="my-20">
-              <motion.h2
-                initial={{ opacity: 0 }}
-                animate={{ opacity: activeCard === index ? 1 : 0.3 }}
-                className="text-2xl font-bold text-slate-100"
-              >
-                {item.title}
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: activeCard === index ? 1 : 0.3 }}
-                className="text-kg mt-10 max-w-sm text-slate-300"
-              >
-                {item.description}
-              </motion.p>
-            </div>
-          ))}
-          <div className="h-40" />
+      <div
+        ref={ref}
+        className="sticky-scroll-container relative flex h-full justify-center space-x-10 overflow-y-auto p-10 w-full"
+      >
+        <div className="div relative flex items-start px-4">
+          <div className="max-w-2xl">
+            {content.map((item, index) => (
+              <div key={item.title + index} className="my-20">
+                <motion.h2
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: activeCard === index ? 1 : 0.3 }}
+                  className="text-2xl font-bold text-slate-100"
+                >
+                  {item.title}
+                </motion.h2>
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: activeCard === index ? 1 : 0.3 }}
+                  className="text-kg mt-10 max-w-sm text-slate-300"
+                >
+                  {item.description}
+                </motion.p>
+              </div>
+            ))}
+            <div className="h-40" />
+          </div>
+        </div>
+        <div
+          className={[
+            "sticky top-10 hidden h-[32rem] w-[28rem] overflow-hidden rounded-md lg:block",
+            contentClassName ?? "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        >
+          {content[activeCard]?.content ?? null}
         </div>
       </div>
-      <div
-        className={[
-          "sticky top-10 hidden h-[32rem] w-[28rem] overflow-hidden rounded-md lg:block",
-          contentClassName ?? "",
-        ]
-          .filter(Boolean)
-          .join(" ")}
-      >
-        {content[activeCard]?.content ?? null}
-      </div>
-    </motion.div>
+    </BorderGlow>
   );
 };

@@ -4,15 +4,22 @@ import React from "react";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import { patterns, type PatternData } from "@/data/patterns";
 
+import { BorderGlow } from "@/components/ui/border-glow";
+
 /* ── Pattern card shown on the right side of the StickyScroll ── */
 function PatternCard({ pattern }: { pattern: PatternData }) {
   const [selected, setSelected] = React.useState(false);
+  const [scanning, setScanning] = React.useState(false);
 
   return (
     <div
       onClick={() => {
-        setSelected(!selected);
-        console.log(selected ? "Deselected pattern:" : "Selected pattern:", pattern.title);
+        const nextSelected = !selected;
+        setSelected(nextSelected);
+        if (!nextSelected) {
+          setScanning(false);
+        }
+        console.log(nextSelected ? "Selected pattern:" : "Deselected pattern:", pattern.title);
       }}
       className={`pattern-card group relative flex h-full w-full cursor-pointer flex-col items-center justify-between p-6 transition-transform duration-300 ${
         selected ? "scale-[1.02]" : "hover:scale-[1.02]"
@@ -47,46 +54,61 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
           {pattern.signal}
         </span>
 
-        {/* ── SVG illustration ── */}
-        <svg
-          viewBox={pattern.svgViewBox}
-          className="mt-6 w-full max-w-[340px]"
-          aria-hidden="true"
+        {/* ── SVG illustration wrapped in BorderGlow ── */}
+        <BorderGlow
+          className="w-full max-w-[340px] mt-6 cursor-default"
+          innerClassName="p-4 flex items-center justify-center w-full h-full"
+          edgeSensitivity={20}
+          glowColor="142 70 50" // green glow
+          backgroundColor="#08080c"
+          borderRadius={12}
+          glowRadius={30}
+          glowIntensity={0.8}
+          coneSpread={20}
+          animated={false}
+          colors={['#10b981', '#059669', '#ef4444']} // green/red themed gradient border
+          fillOpacity={0.05}
         >
-          {/* Gradient area fill under the line */}
-          <defs>
-            <linearGradient
-              id={`grad-${pattern.id}`}
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
-              <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
-            </linearGradient>
-          </defs>
+          <svg
+            viewBox={pattern.svgViewBox}
+            className="w-full h-auto"
+            aria-hidden="true"
+          >
+            {/* Gradient area fill under the line */}
+            <defs>
+              <linearGradient
+                id={`grad-${pattern.id}`}
+                x1="0"
+                y1="0"
+                x2="0"
+                y2="1"
+              >
+                <stop offset="0%" stopColor="#10b981" stopOpacity={0.35} />
+                <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+              </linearGradient>
+            </defs>
 
-          {/* Area fill — close path at the bottom of the viewBox */}
-          <path
-            d={closePath(pattern.svgPath, pattern.svgViewBox)}
-            fill={`url(#grad-${pattern.id})`}
-          />
+            {/* Area fill — close path at the bottom of the viewBox */}
+            <path
+              d={closePath(pattern.svgPath, pattern.svgViewBox)}
+              fill={`url(#grad-${pattern.id})`}
+            />
 
-          {/* Main line */}
-          <path
-            d={pattern.svgPath}
-            fill="none"
-            stroke="#10b981"
-            strokeWidth={2.5}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="drop-shadow-[0_0_6px_#10b98180]"
-          />
-        </svg>
+            {/* Main line */}
+            <path
+              d={pattern.svgPath}
+              fill="none"
+              stroke="#10b981"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="drop-shadow-[0_0_6px_#10b98180]"
+            />
+          </svg>
+        </BorderGlow>
       </div>
 
-      {/* ── Run Scan Button (Appears on selection) ── */}
+      {/* ── Run / Cancel Scan Button Group (Appears on selection) ── */}
       <div
         className={`w-full flex-shrink-0 transform overflow-hidden transition-all duration-500 ease-out ${
           selected
@@ -94,19 +116,50 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
             : "mt-0 max-h-0 translate-y-4 opacity-0"
         }`}
       >
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log("Running scan for:", pattern.title);
-          }}
-          className="relative flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-800 py-3.5 text-sm font-semibold tracking-wide text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] active:translate-y-0"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-          </svg>
-          RUN SCAN
-        </button>
+        <div className="relative w-full h-[52px] overflow-hidden rounded-lg">
+          <div
+            className={`flex w-[200%] h-full transition-transform duration-500 ease-in-out ${
+              scanning ? "-translate-x-1/2" : "translate-x-0"
+            }`}
+          >
+            {/* RUN SCAN Button */}
+            <div className="w-1/2 h-full px-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setScanning(true);
+                  console.log("Running scan for:", pattern.title);
+                }}
+                className="relative flex w-full h-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-800 text-sm font-semibold tracking-wide text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] active:translate-y-0"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                </svg>
+                RUN SCAN
+              </button>
+            </div>
+
+            {/* CANCEL SCAN Button */}
+            <div className="w-1/2 h-full px-0.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setScanning(false);
+                  console.log("Cancelled scan for:", pattern.title);
+                }}
+                className="relative flex w-full h-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-950/20 text-sm font-semibold tracking-wide text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all duration-300 hover:bg-red-500/10 active:translate-y-0"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+                CANCEL SCAN
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

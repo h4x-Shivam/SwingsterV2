@@ -8,7 +8,7 @@ export default function Page() {
       {/* ── Global Liquid Ether Background ── */}
       <div className="fixed inset-0 z-0 opacity-60 mix-blend-screen pointer-events-none">
         <LiquidEther
-          colors={['#7C3AED', '#00c896', '#5B21B6']}
+          colors={['#10b981', '#10b981', '#ef4444']}
           mouseForce={30}
           cursorSize={150}
           isViscous={true}

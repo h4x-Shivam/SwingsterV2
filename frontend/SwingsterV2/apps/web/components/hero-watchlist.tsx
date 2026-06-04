@@ -47,6 +47,8 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
   const height = 28;
   const padding = 2;
 
+  if (data.length === 0) return null;
+
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
@@ -57,15 +59,21 @@ function Sparkline({ data, positive }: { data: number[]; positive: boolean }) {
     return { x, y };
   });
 
+  const firstPoint = points[0];
+  const lastPoint = points[points.length - 1];
+  if (!firstPoint || !lastPoint) return null;
+  const firstVal = data[0] ?? 0;
+
   const linePath = points
     .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`)
     .join(" ");
 
   // Closed area path for gradient fill
-  const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${height} L ${points[0].x.toFixed(1)} ${height} Z`;
+  const areaPath = `${linePath} L ${lastPoint.x.toFixed(1)} ${height} L ${firstPoint.x.toFixed(1)} ${height} Z`;
 
   const color = positive ? "#00c896" : "#ef4444";
-  const gradientId = `sparkGrad-${positive ? "g" : "r"}-${data[0].toFixed(0)}`;
+  const gradientId = `sparkGrad-${positive ? "g" : "r"}-${firstVal.toFixed(0)}`;
+
 
   return (
     <svg
