@@ -63,6 +63,47 @@ if __name__ == "__main__":
     print(f"\nSending {len(candidates_dict)} candidates to Groq judge...")
     sys.stdout.flush()
     final_picks = run_judge(candidates_dict, mode=args.mode)
+    
+    print(f"\nFetching NSE fundamental data for {len(final_picks)} final picks...")
+    sys.stdout.flush()
+    from fetcher.nse_fetcher import _yf_fetch
+    
+    def format_mcap(val):
+        if not val: return "N/A"
+        try:
+            v = float(val)
+            if v >= 1e12: return f"₹{v/1e12:.1f}T"
+            if v >= 1e9: return f"₹{v/1e9:.1f}B"
+            if v >= 1e6: return f"₹{v/1e6:.1f}M"
+            return f"₹{v:.0f}"
+        except: return "N/A"
+
+    def format_pct(val):
+        if not val: return "N/A"
+        try: return f"{float(val)*100:.1f}%"
+        except: return "N/A"
+        
+    def format_ratio(val):
+        if not val: return "N/A"
+        try: return f"{float(val):.2f}"
+        except: return "N/A"
+
+    for r in final_picks:
+        symbol = r['symbol']
+        try:
+            yf_data = _yf_fetch(f"{symbol}.NS")
+            r["fundamentals"] = {
+                "market_cap": format_mcap(yf_data.get("market_cap")),
+                "pe_ratio": format_ratio(yf_data.get("trailing_pe")),
+                "roe": format_pct(yf_data.get("return_on_equity")),
+                "debt_to_equity": format_ratio(yf_data.get("debt_to_equity"))
+            }
+        except Exception as e:
+            r["fundamentals"] = {
+                "market_cap": "N/A", "pe_ratio": "N/A", "roe": "N/A", "debt_to_equity": "N/A"
+            }
+            print(f"  [!] Failed to fetch fundamentals for {symbol}: {e}")
+            
     save_final_picks(final_picks, mode=args.mode)
     
     # Print judge results

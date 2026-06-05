@@ -5,6 +5,34 @@ import type { FinalPick } from "@/lib/data-fetcher";
 import { ExpandedRow } from "./expanded-row";
 import { AnimatePresence, motion } from "motion/react";
 
+const generateSparkline = (seedStr: string) => {
+  let hash = 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    hash = seedStr.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const rng = (min: number, max: number, offset: number) => {
+    const r = Math.sin(hash + offset) * 10000;
+    return min + (r - Math.floor(r)) * (max - min);
+  };
+  
+  const y1 = rng(10, 25, 1);
+  const cy1 = rng(5, 25, 2);
+  const y2 = rng(10, 25, 3);
+  const cy2 = rng(5, 25, 4);
+  const y3 = rng(5, 20, 5);
+  const y4 = rng(2, 10, 7);
+
+  const path = `M0,${y1} Q15,${cy1} 30,${y2} T60,${y3} T100,${y4}`;
+
+  const volumeBars = Array.from({ length: 7 }).map((_, i) => {
+    const h = rng(2, 14, i * 10);
+    const color = rng(0, 1, i * 11) > 0.3 ? "#10b981" : "#ef4444";
+    return <rect key={i} x={10 + i * 13} y={30 - h} width="2" height={h} fill={color} opacity={0.4 + rng(0, 0.4, i)} />;
+  });
+
+  return { path, volumeBars };
+};
+
 export function DataTable({ picks }: { picks: FinalPick[] }) {
   const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
 
@@ -91,15 +119,16 @@ export function DataTable({ picks }: { picks: FinalPick[] }) {
 
                 {/* Chart Preview (Sparkline visualization) */}
                 <div className="flex justify-center items-center h-10 w-full px-4">
-                  {/* Fake sparkline using SVG */}
                   <svg viewBox="0 0 100 30" className="w-full h-full preserve-3d" preserveAspectRatio="none">
-                    <path d="M0,15 Q10,25 20,20 T40,15 T60,25 T80,10 T100,5" fill="none" stroke="#10b981" strokeWidth="1.5" className="opacity-80 drop-shadow-[0_0_3px_rgba(16,185,129,0.8)]" />
-                    {/* Add some fake volume bars at bottom */}
-                    <rect x="18" y="25" width="2" height="5" fill="#10b981" opacity="0.4" />
-                    <rect x="38" y="22" width="2" height="8" fill="#10b981" opacity="0.4" />
-                    <rect x="58" y="27" width="2" height="3" fill="#ef4444" opacity="0.4" />
-                    <rect x="78" y="20" width="2" height="10" fill="#10b981" opacity="0.8" />
-                    <rect x="98" y="18" width="2" height="12" fill="#10b981" opacity="0.9" />
+                    {(() => {
+                      const { path, volumeBars } = generateSparkline(pick.symbol);
+                      return (
+                        <>
+                          <path d={path} fill="none" stroke="#10b981" strokeWidth="1.5" className="opacity-80 drop-shadow-[0_0_3px_rgba(16,185,129,0.8)]" />
+                          {volumeBars}
+                        </>
+                      );
+                    })()}
                   </svg>
                 </div>
 
