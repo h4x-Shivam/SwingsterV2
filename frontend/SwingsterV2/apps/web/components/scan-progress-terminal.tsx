@@ -1,25 +1,8 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { BorderGlow } from "./ui/border-glow";
-
-const terminalLogs = [
-  "Initializing SwingsterV2 scan engine...",
-  "[OK] Connected to ohlcv.db (Historical Data)",
-  "Fetching live tick data...",
-  "[OK] Live quotes synchronized.",
-  "Scanning universe: 2,185 symbols...",
-  "Applying Minervini Stage 2 filters...",
-  "> 412 symbols passed trend requirements.",
-  "Executing VCP pattern recognition algorithms...",
-  "> Analyzing volatility contraction layers...",
-  "> Calculating volume dry-up signatures...",
-  "Filtering by Risk-Reward minimums...",
-  "Sending 65 candidates to Groq Judge Agent...",
-  "Awaiting qualitative verdict...",
-  "[SUCCESS] 57 setups confirmed with HIGH/MEDIUM conviction."
-];
 
 export function ScanProgressTerminal({
   patternName,
@@ -28,26 +11,87 @@ export function ScanProgressTerminal({
   patternName: string;
   onComplete?: () => void;
 }) {
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<string[]>(["Initializing SwingsterV2 scan engine..."]);
   const [progress, setProgress] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let currentLog = 0;
-    
-    const interval = setInterval(() => {
-      if (currentLog < terminalLogs.length) {
-        setLogs(prev => [...prev, terminalLogs[currentLog]]);
-        setProgress(Math.floor(((currentLog + 1) / terminalLogs.length) * 100));
-        currentLog++;
-      } else {
-        clearInterval(interval);
-        setIsFinished(true);
-      }
-    }, 400); // 400ms per log line
+    // Auto-scroll to bottom
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [logs]);
 
-    return () => clearInterval(interval);
-  }, []);
+  useEffect(() => {
+    let isCancelled = false;
+
+    const runLiveScan = async () => {
+      try {
+        const response = await fetch(`/api/scan?mode=${patternName}`);
+        if (!response.body) return;
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+
+        while (!isCancelled) {
+          const { value, done } = await reader.read();
+          if (done) {
+            setIsFinished(true);
+            break;
+          }
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              let msg = line.substring(6);
+              try {
+                msg = JSON.parse(msg); // Decode the string
+              } catch (e) {
+                // Ignore parse errors, use raw msg
+              }
+
+              if (msg.trim()) {
+                setLogs((prev) => {
+                  const newLogs = [...prev, msg];
+                  return newLogs.slice(-50); // Keep terminal history manageable
+                });
+
+                // Extract progress like "Progress: 150/2153"
+                const progressMatch = msg.match(/Progress:\s*(\d+)\s*\/\s*(\d+)/);
+                if (progressMatch) {
+                  const current = parseInt(progressMatch[1], 10);
+                  const total = parseInt(progressMatch[2], 10);
+                  if (total > 0) {
+                    setProgress(Math.floor((current / total) * 100));
+                  }
+                }
+
+                if (msg.includes("[SYSTEM] Process exited")) {
+                  setProgress(100);
+                  setIsFinished(true);
+                }
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        if (!isCancelled) {
+          setLogs((prev) => [...prev, "[SYSTEM_ERROR] Connection failed"]);
+          setIsFinished(true);
+        }
+      }
+    };
+
+    runLiveScan();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [patternName]);
 
   return (
     <BorderGlow
@@ -77,25 +121,36 @@ export function ScanProgressTerminal({
       </div>
 
       {/* Terminal Output */}
-      <div className="flex-1 overflow-y-auto pr-2 space-y-2 relative no-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto pr-2 space-y-2 relative no-scrollbar pb-4 scroll-smooth">
         <AnimatePresence initial={false}>
-          {logs.map((log, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              className={`leading-relaxed ${
-                log?.includes("[OK]") || log?.includes("[SUCCESS]")
-                  ? "text-emerald-400 font-medium"
-                  : log?.startsWith(">")
-                  ? "text-white/40 pl-4"
-                  : "text-white/70"
-              }`}
-            >
-              <span className="text-emerald-500/50 mr-2">›</span>
-              {log}
-            </motion.div>
-          ))}
+          {logs.map((log, i) => {
+            const isSuccess = log?.includes("[OK]") || log?.includes("[SUCCESS]");
+            const isError = log?.includes("[ERROR]") || log?.includes("[WARN]");
+            const isSystem = log?.includes("[SYSTEM]");
+            const isSubItem = log?.startsWith(">");
+            
+            return (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className={`leading-relaxed text-xs md:text-sm ${
+                  isSuccess
+                    ? "text-emerald-400 font-medium"
+                    : isError
+                    ? "text-red-400"
+                    : isSystem
+                    ? "text-emerald-500/50"
+                    : isSubItem
+                    ? "text-white/40 pl-4"
+                    : "text-white/70"
+                }`}
+              >
+                <span className="text-emerald-500/50 mr-2">›</span>
+                {log}
+              </motion.div>
+            );
+          })}
         </AnimatePresence>
         
         {!isFinished && (

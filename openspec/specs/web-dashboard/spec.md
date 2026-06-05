@@ -7,8 +7,8 @@ The system SHALL provide a web-based Next.js application that visualizes the res
 - **AND** display a Hero Stats header with the total tickers scanned and a dropdown list of the matching VCP symbols with a "Copy" utility.
 - **AND** display a data grid containing the Rank, Symbol, Current Price, Distance to Buy, Risk/Reward (R:R), and Conviction badges.
 
-### Requirement: Sliding Scanner Transition
-The system SHALL provide a dynamic micro-interaction when a user manually triggers a pattern scan from the library UI.
+### Requirement: Live Streaming Scanner Execution
+The system SHALL provide a dynamic micro-interaction when a user manually triggers a pattern scan from the library UI. Instead of mocking the scan, the UI SHALL spawn the backend scan engine in real-time.
 
 #### Scenario: User runs a live scan from the library
 - **GIVEN** the user is viewing the pattern library (StickyScroll layout)
@@ -16,7 +16,10 @@ The system SHALL provide a dynamic micro-interaction when a user manually trigge
 - **THEN** the system SHALL fade out the left-side text description
 - **AND** smoothly slide the pattern chart card to the left using layout animations
 - **AND** slide a "Scan Progress Terminal" into view on the right side
-- **AND** simulate a scrolling terminal output showing the multi-stage filter pipeline (fetching, Stage 2, pattern detection, RR filtering, Judge grading).
+- **AND** connect to the `/api/scan` Next.js API route via `fetch` to read Server-Sent Events (SSE).
+- **AND** the API route SHALL spawn the `main.py` Python process locally and pipe `stdout` and `stderr` directly to the frontend.
+- **AND** the terminal UI SHALL dynamically extract progress percentages (e.g., `Progress: 100/2153`) to update the progress bar while appending authentic log messages.
+- **AND** upon stream completion, the UI SHALL route the user to `/dashboard` to load the freshly generated `final_picks.json`.
 
 ### Requirement: Scanner Output Integration
 The dashboard UI SHALL accurately reflect the 5-part composite score logic used by the backend scan engine.
