@@ -1,6 +1,8 @@
 import { HeroSection } from "@/components/hero-section";
 import { PatternShowcase } from "@/components/pattern-showcase";
+import { UnderTheHood } from "@/components/under-the-hood";
 import { QuoteSection } from "@/components/quote-section";
+import { AboutSection } from "@/components/about-section";
 import { LiquidEther } from "@/components/ui/liquid-ether";
 
 export default function Page() {
@@ -21,7 +23,9 @@ export default function Page() {
       <div className="relative z-10">
         <HeroSection />
         <PatternShowcase />
+        <UnderTheHood />
         <QuoteSection />
+        <AboutSection />
       </div>
     </main>
   );
