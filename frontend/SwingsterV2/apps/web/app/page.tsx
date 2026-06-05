@@ -1,5 +1,6 @@
 import { HeroSection } from "@/components/hero-section";
 import { PatternShowcase } from "@/components/pattern-showcase";
+import { QuoteSection } from "@/components/quote-section";
 import { LiquidEther } from "@/components/ui/liquid-ether";
 
 export default function Page() {
@@ -20,6 +21,7 @@ export default function Page() {
       <div className="relative z-10">
         <HeroSection />
         <PatternShowcase />
+        <QuoteSection />
       </div>
     </main>
   );
