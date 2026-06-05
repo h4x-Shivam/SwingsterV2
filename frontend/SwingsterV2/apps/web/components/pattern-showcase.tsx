@@ -3,6 +3,7 @@
 import React from "react";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import { patterns, type PatternData } from "@/data/patterns";
+import { useRouter } from "next/navigation";
 
 import { BorderGlow } from "@/components/ui/border-glow";
 import { ScanProgressTerminal } from "@/components/scan-progress-terminal";
@@ -193,6 +194,7 @@ function closePath(pathD: string, viewBox: string): string {
 
 /* ── Slide 2 — Pattern Showcase section ── */
 export function PatternShowcase() {
+  const router = useRouter();
   const [activeScanId, setActiveScanId] = React.useState<string | null>(null);
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
 
@@ -266,7 +268,10 @@ export function PatternShowcase() {
             activePattern ? (
               <ScanProgressTerminal
                 patternName={activePattern.title}
-                onComplete={() => setActiveScanId(null)}
+                onComplete={() => {
+                  router.push("/dashboard");
+                  setTimeout(() => setActiveScanId(null), 500); // clear state after routing
+                }}
               />
             ) : null
           }

@@ -85,9 +85,9 @@ export function ScanProgressTerminal({
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               className={`leading-relaxed ${
-                log.includes("[OK]") || log.includes("[SUCCESS]")
+                log?.includes("[OK]") || log?.includes("[SUCCESS]")
                   ? "text-emerald-400 font-medium"
-                  : log.startsWith(">")
+                  : log?.startsWith(">")
                   ? "text-white/40 pl-4"
                   : "text-white/70"
               }`}
