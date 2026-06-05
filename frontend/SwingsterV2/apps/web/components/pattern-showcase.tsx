@@ -5,21 +5,31 @@ import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import { patterns, type PatternData } from "@/data/patterns";
 
 import { BorderGlow } from "@/components/ui/border-glow";
+import { ScanProgressTerminal } from "@/components/scan-progress-terminal";
 
 /* ── Pattern card shown on the right side of the StickyScroll ── */
-function PatternCard({ pattern }: { pattern: PatternData }) {
-  const [selected, setSelected] = React.useState(false);
-  const [scanning, setScanning] = React.useState(false);
+function PatternCard({
+  pattern,
+  selected,
+  scanning,
+  onSelect,
+  onScanStart,
+  onScanCancel
+}: {
+  pattern: PatternData;
+  selected: boolean;
+  scanning: boolean;
+  onSelect: () => void;
+  onScanStart: () => void;
+  onScanCancel: () => void;
+}) {
 
   return (
     <div
-      onClick={() => {
-        const nextSelected = !selected;
-        setSelected(nextSelected);
-        if (!nextSelected) {
-          setScanning(false);
-        }
-        console.log(nextSelected ? "Selected pattern:" : "Deselected pattern:", pattern.title);
+      onClick={(e) => {
+        // Only trigger onSelect if the click isn't from the buttons inside
+        if ((e.target as HTMLElement).closest("button")) return;
+        onSelect();
       }}
       className={`pattern-card group relative flex h-full w-full cursor-pointer flex-col items-center justify-between p-6 transition-transform duration-300 ${
         selected ? "scale-[1.02]" : "hover:scale-[1.02]"
@@ -128,7 +138,7 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setScanning(true);
+                  onScanStart();
                   console.log("Running scan for:", pattern.title);
                 }}
                 className="relative flex w-full h-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-red-600 to-red-800 text-sm font-semibold tracking-wide text-white shadow-[0_0_20px_rgba(220,38,38,0.3)] transition-all duration-300 hover:shadow-[0_0_30px_rgba(220,38,38,0.6)] active:translate-y-0"
@@ -146,7 +156,7 @@ function PatternCard({ pattern }: { pattern: PatternData }) {
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setScanning(false);
+                  onScanCancel();
                   console.log("Cancelled scan for:", pattern.title);
                 }}
                 className="relative flex w-full h-full items-center justify-center gap-2 rounded-lg border border-red-500/50 bg-red-950/20 text-sm font-semibold tracking-wide text-red-500 shadow-[0_0_15px_rgba(239,68,68,0.1)] transition-all duration-300 hover:bg-red-500/10 active:translate-y-0"
@@ -181,15 +191,39 @@ function closePath(pathD: string, viewBox: string): string {
   return `${pathD} L ${vbWidth} ${vbHeight} L ${firstX} ${vbHeight} Z`;
 }
 
-/* ── Build content array for StickyScroll from pattern data ── */
-const stickyContent = patterns.map((p) => ({
-  title: p.title,
-  description: p.description,
-  content: <PatternCard pattern={p} />,
-}));
-
 /* ── Slide 2 — Pattern Showcase section ── */
 export function PatternShowcase() {
+  const [activeScanId, setActiveScanId] = React.useState<string | null>(null);
+  const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
+
+  const stickyContent = React.useMemo(
+    () =>
+      patterns.map((p) => ({
+        title: p.title,
+        description: p.description,
+        content: (
+          <PatternCard
+            pattern={p}
+            selected={selectedCardId === p.id}
+            scanning={activeScanId === p.id}
+            onSelect={() => {
+              if (selectedCardId === p.id) {
+                setSelectedCardId(null);
+                if (activeScanId === p.id) setActiveScanId(null);
+              } else {
+                setSelectedCardId(p.id);
+              }
+            }}
+            onScanStart={() => setActiveScanId(p.id)}
+            onScanCancel={() => setActiveScanId(null)}
+          />
+        ),
+      })),
+    [selectedCardId, activeScanId]
+  );
+
+  const activePattern = patterns.find((p) => p.id === activeScanId);
+
   return (
     <section
       id="pattern-showcase"
@@ -225,7 +259,18 @@ export function PatternShowcase() {
 
       {/* ── Sticky scroll content ── */}
       <div className="mx-auto max-w-6xl px-4">
-        <StickyScroll content={stickyContent} />
+        <StickyScroll
+          content={stickyContent}
+          isScanning={activeScanId !== null}
+          progressUI={
+            activePattern ? (
+              <ScanProgressTerminal
+                patternName={activePattern.title}
+                onComplete={() => setActiveScanId(null)}
+              />
+            ) : null
+          }
+        />
       </div>
     </section>
   );
