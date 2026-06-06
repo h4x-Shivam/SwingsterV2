@@ -9,7 +9,7 @@ const DATA_DIR = path.resolve(process.cwd(), "../../../../data");
 export interface ScanSummary {
   mode: string;
   total_scanned: number;
-  vcp_found_count: number;
+  pattern_match_count: number;
   rejected_by_rr: string[];
   timestamp: string;
 }

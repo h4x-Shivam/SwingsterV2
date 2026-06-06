@@ -49,7 +49,7 @@ if __name__ == "__main__":
     summary_data = {
         "mode": args.mode,
         "total_scanned": total_scanned,
-        "vcp_found_count": count_pattern,
+        "pattern_match_count": count_pattern,
         "rejected_by_rr": rejected_rr_list,
         "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
     }

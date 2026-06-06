@@ -8,6 +8,7 @@ export const StickyScroll = ({
   contentClassName,
   isScanning = false,
   progressUI = null,
+  activeCardOverride,
 }: {
   content: {
     title: string;
@@ -17,8 +18,10 @@ export const StickyScroll = ({
   contentClassName?: string;
   isScanning?: boolean;
   progressUI?: React.ReactNode;
+  activeCardOverride?: number;
 }) => {
   const [activeCard, setActiveCard] = React.useState(0);
+  const displayCard = activeCardOverride !== undefined && isScanning ? activeCardOverride : activeCard;
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({
     container: ref,
@@ -106,7 +109,7 @@ export const StickyScroll = ({
               .filter(Boolean)
               .join(" ")}
           >
-            {content[activeCard]?.content ?? null}
+            {content[displayCard]?.content ?? null}
           </motion.div>
 
           {isScanning && (

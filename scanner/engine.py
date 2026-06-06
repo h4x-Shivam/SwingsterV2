@@ -89,11 +89,14 @@ def scan_symbol(
 
     # 2. Convert to Candles
     candles = rows_to_candles(rows)
-    if len(candles) < 30:
-        return None
 
     # get active patterns for this mode
     active_patterns = get_patterns(mode)
+
+    # Early candle-count gate — use the minimum across active patterns
+    min_candles_needed = min(p.config.min_candles for p in active_patterns)
+    if len(candles) < min_candles_needed:
+        return None
 
     # 3. Stage 2 trend filter — skip if score < 60
     trend = analyze_trend(candles)

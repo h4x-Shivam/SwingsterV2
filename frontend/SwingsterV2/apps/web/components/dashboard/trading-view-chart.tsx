@@ -8,9 +8,7 @@ interface TradingViewChartProps {
 
 export function TradingViewChart({ symbol }: TradingViewChartProps) {
   // We use BSE: prefix since it tends to be more universally available 
-  // on the free TradingView tier without delayed data warnings, 
-  // but NSE: works too. The library handles the container and script injection.
-  const tvSymbol = `NSE:${symbol}`;
+  const tvSymbol = `BSE:${symbol}`;
 
   return (
     <div className="absolute inset-0 w-full h-full">

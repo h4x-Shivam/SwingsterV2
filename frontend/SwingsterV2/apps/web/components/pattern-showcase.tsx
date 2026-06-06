@@ -226,6 +226,11 @@ export function PatternShowcase() {
 
   const activePattern = patterns.find((p) => p.id === activeScanId);
 
+  const activeScanIndex = React.useMemo(() => {
+    if (!activeScanId) return undefined;
+    return patterns.findIndex((p) => p.id === activeScanId);
+  }, [activeScanId]);
+
   return (
     <section
       id="pattern-showcase"
@@ -264,6 +269,7 @@ export function PatternShowcase() {
         <StickyScroll
           content={stickyContent}
           isScanning={activeScanId !== null}
+          activeCardOverride={activeScanIndex}
           progressUI={
             activePattern ? (
               <ScanProgressTerminal

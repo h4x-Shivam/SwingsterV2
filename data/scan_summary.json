@@ -1,9 +1,15 @@
 {
-  "mode": "VCP",
+  "mode": "FLAG_POLE",
   "total_scanned": 2181,
-  "vcp_found_count": 22,
+  "vcp_found_count": 338,
   "rejected_by_rr": [
-    "INOXINDIA"
+    "JBMA",
+    "ONEPOINT",
+    "AGARWALEYE",
+    "COALINDIA",
+    "INOXINDIA",
+    "MONARCH",
+    "BIOCON"
   ],
-  "timestamp": "2026-06-06T09:10:45.634794Z"
+  "timestamp": "2026-06-06T14:54:48.999219Z"
 }

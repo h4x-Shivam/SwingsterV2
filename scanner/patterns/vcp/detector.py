@@ -48,12 +48,13 @@ class VCPPattern(BasePattern):
                 return None
 
             first_pullback_max_depth = self.config.extras.setdefault("first_pullback_max_depth", 35.0)
+            min_pullback_depth = self.config.extras.setdefault("min_pullback_depth", 1.5)
             vol_avg_window = self.config.extras.setdefault("vol_avg_window", 5)
 
             pullbacks: list[dict] = []
             for sl in post_pivot_lows:
                 depth_pct = (pivot_price - sl.price) / pivot_price * 100
-                if depth_pct <= 0 or depth_pct > first_pullback_max_depth:
+                if depth_pct < min_pullback_depth or depth_pct > first_pullback_max_depth:
                     continue
 
                 vol_start = max(0, sl.index - vol_avg_window)
