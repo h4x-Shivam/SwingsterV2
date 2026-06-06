@@ -107,12 +107,12 @@ Remember: start with [ end with ] no text outside the array
 Each object must have EXACTLY these fields (no extra fields, no missing fields):
 
 [
-  {
+  {{
     "symbol": "SYMBOLNAME",
     "conviction": "HIGH",
     "judge_verdict": "2–3 sentences on what makes this setup compelling. Must mention pattern type, key strength, proximity to buy point.",
     "flags": "Warnings like earnings, sector pressure, needs confirmation. Use empty string if none."
-  }
+  }}
 ]
 
 conviction must be: HIGH or MEDIUM

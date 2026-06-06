@@ -254,7 +254,7 @@ def scan_all(
 
     if not eligible_symbols:
         logger.info("No eligible symbols to scan after pre-filtering.")
-        return []
+        return [], prefilter["total"], 0, []
 
     # Configure worker counts based on WORKER_COUNT and symbol count
     actual_workers = min(WORKER_COUNT, len(eligible_symbols))

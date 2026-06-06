@@ -1,7 +1,9 @@
 {
   "mode": "VCP",
-  "total_scanned": 2153,
-  "vcp_found_count": 42,
-  "rejected_by_rr": ["HDFCBANK", "ICICIBANK", "L&T", "BAJFINANCE", "KOTAKBANK", "MARUTI", "SBIN"],
-  "timestamp": "2026-05-31T07:50:39.792768Z"
+  "total_scanned": 2181,
+  "vcp_found_count": 22,
+  "rejected_by_rr": [
+    "INOXINDIA"
+  ],
+  "timestamp": "2026-06-06T09:10:45.634794Z"
 }

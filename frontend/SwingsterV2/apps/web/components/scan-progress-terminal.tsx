@@ -62,8 +62,8 @@ export function ScanProgressTerminal({
                 // Extract progress like "Progress: 150/2153"
                 const progressMatch = msg.match(/Progress:\s*(\d+)\s*\/\s*(\d+)/);
                 if (progressMatch) {
-                  const current = parseInt(progressMatch[1], 10);
-                  const total = parseInt(progressMatch[2], 10);
+                  const current = parseInt(progressMatch[1] ?? "0", 10);
+                  const total = parseInt(progressMatch[2] ?? "0", 10);
                   if (total > 0) {
                     setProgress(Math.floor((current / total) * 100));
                   }

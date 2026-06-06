@@ -66,23 +66,28 @@ if __name__ == "__main__":
     
     print(f"\nFetching NSE fundamental data for {len(final_picks)} final picks...")
     sys.stdout.flush()
-    from fetcher.nse_fetcher import _yf_fetch
-    
+
+    _yf_fetch = None
+    try:
+        from fetcher.nse_fetcher import _yf_fetch
+    except ImportError as ie:
+        print(f"  [WARN] yfinance not available — skipping fundamentals ({ie})")
+
     def format_mcap(val):
         if not val: return "N/A"
         try:
             v = float(val)
-            if v >= 1e12: return f"₹{v/1e12:.1f}T"
-            if v >= 1e9: return f"₹{v/1e9:.1f}B"
-            if v >= 1e6: return f"₹{v/1e6:.1f}M"
-            return f"₹{v:.0f}"
+            if v >= 1e12: return f"Rs {v/1e12:.1f}T"
+            if v >= 1e9: return f"Rs {v/1e9:.1f}B"
+            if v >= 1e6: return f"Rs {v/1e6:.1f}M"
+            return f"Rs {v:.0f}"
         except: return "N/A"
 
     def format_pct(val):
         if not val: return "N/A"
         try: return f"{float(val)*100:.1f}%"
         except: return "N/A"
-        
+
     def format_ratio(val):
         if not val: return "N/A"
         try: return f"{float(val):.2f}"
@@ -90,6 +95,11 @@ if __name__ == "__main__":
 
     for r in final_picks:
         symbol = r['symbol']
+        if _yf_fetch is None:
+            r["fundamentals"] = {
+                "market_cap": "N/A", "pe_ratio": "N/A", "roe": "N/A", "debt_to_equity": "N/A"
+            }
+            continue
         try:
             yf_data = _yf_fetch(f"{symbol}.NS")
             r["fundamentals"] = {

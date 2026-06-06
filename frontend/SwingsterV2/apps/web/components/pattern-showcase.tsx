@@ -267,7 +267,7 @@ export function PatternShowcase() {
           progressUI={
             activePattern ? (
               <ScanProgressTerminal
-                patternName={activePattern.title}
+                patternName={activePattern.mode}
                 onComplete={() => {
                   router.push("/dashboard");
                   setTimeout(() => setActiveScanId(null), 500); // clear state after routing

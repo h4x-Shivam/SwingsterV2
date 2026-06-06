@@ -17,32 +17,34 @@ export interface ScanSummary {
 export interface FinalPick {
   rank: number;
   symbol: string;
-  sector: string;
   pattern: string;
+  scan_mode: string;
   composite_score: number;
   conviction: "HIGH" | "MEDIUM";
   buy_point: number;
   stop_loss: number;
   target: number;
-  target2: number;
   rr_ratio: number;
   current_price: number;
   distance_from_buy_pct: number;
-  pattern_age: number;
-  trend: string;
-  judge_verdict: string;
-  flags: string;
   signal_strength: number;
   volume_score: number;
   rr_score: number;
   stage2_score: number;
   rs_score: number;
+  judge_verdict: string;
+  flags: string;
   fundamentals: {
     market_cap: string;
     pe_ratio: string;
     roe: string;
     debt_to_equity: string;
   };
+  // Optional fields not yet emitted by the scanner
+  sector?: string;
+  target2?: number;
+  pattern_age?: number;
+  trend?: string;
 }
 
 export async function getScanSummary(): Promise<ScanSummary | null> {

@@ -1,5 +1,6 @@
 import React from "react";
 import type { FinalPick } from "@/lib/data-fetcher";
+import { TradingViewChart } from "./trading-view-chart";
 
 export function ExpandedRow({ pick }: { pick: FinalPick }) {
   const scores = [
@@ -143,18 +144,13 @@ export function ExpandedRow({ pick }: { pick: FinalPick }) {
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" className="text-yellow-500"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
             </div>
             <div className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2 py-1 rounded border border-emerald-500/20 uppercase tracking-widest">
-              #1 Match
+              #{pick.rank} Match
             </div>
           </div>
 
-          {/* TradingView iframe */}
+          {/* TradingView Chart */}
           <div className="flex-1 w-full bg-[#0a0a0c] rounded-lg border border-white/5 overflow-hidden relative min-h-[300px]">
-            {/* The actual TradingView Advanced Chart Widget iframe */}
-            <iframe 
-              src={`https://s.tradingview.com/widgetembed/?frameElementId=tradingview_123&symbol=NSE:${pick.symbol}&interval=D&symboledit=0&saveimage=0&toolbarbg=121216&studies=%5B%5D&theme=dark&style=1&timezone=Asia%2FKolkata&studies_overrides=%7B%7D&overrides=%7B%7D&enabled_features=%5B%5D&disabled_features=%5B%5D&locale=en`}
-              className="absolute inset-0 w-full h-full border-none"
-              allowFullScreen
-            />
+            <TradingViewChart symbol={pick.symbol} />
           </div>
 
           {/* Action Buttons */}

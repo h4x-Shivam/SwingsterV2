@@ -1,6 +1,8 @@
 export interface PatternData {
   id: string;
   title: string;
+  /** Exact value passed to the Python --mode CLI argument */
+  mode: "VCP" | "FLAG_POLE" | "CUP_HANDLE" | "BREAKOUT" | "ALL";
   description: string;
   signal: string;
   /** SVG path data for the pattern illustration */
@@ -13,6 +15,7 @@ export const patterns: PatternData[] = [
   {
     id: "vcp",
     title: "VCP (Volatility Contraction Pattern)",
+    mode: "VCP",
     description:
       "A series of progressively tighter price contractions after a base. Each pullback is shallower than the last — showing sellers are exhausted. A volume dry-up at the pivot signals the breakout entry.",
     signal: "Bullish Continuation",
@@ -24,6 +27,7 @@ export const patterns: PatternData[] = [
   {
     id: "pole-flag",
     title: "Pole & Flag",
+    mode: "FLAG_POLE",
     description:
       "A strong vertical price surge (the pole) followed by a brief, tight consolidation (the flag). The flag forms at a slight downward angle. Breakout from the flag targets the length of the pole added to the breakout point.",
     signal: "Bullish Continuation",
@@ -35,6 +39,7 @@ export const patterns: PatternData[] = [
   {
     id: "cup-handle",
     title: "Cup & Handle",
+    mode: "CUP_HANDLE",
     description:
       "Price forms a smooth U-shaped recovery (the cup) followed by a small downward drift (the handle). The handle is a final shakeout before a powerful breakout above the cup's rim — one of the highest probability setups in trading.",
     signal: "Bullish Continuation",
@@ -46,6 +51,7 @@ export const patterns: PatternData[] = [
   {
     id: "breakout",
     title: "Breakout",
+    mode: "BREAKOUT",
     description:
       "Price consolidates in a tight range building energy, then bursts above a key resistance level on high volume. The breakout candle is decisive — wide range, strong close, volume spike confirming real demand.",
     signal: "Bullish Continuation",
