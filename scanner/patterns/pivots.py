@@ -15,15 +15,15 @@ class SwingLow:
 def find_swing_pivots(
     candles: list[Candle],
     n: int = 3,
+    lookback: int = 252
 ) -> tuple[list[SwingHigh], list[SwingLow]]:
     """
-    Identify swing highs and swing lows in the last 252 candles.
+    Identify swing highs and swing lows in the last `lookback` candles.
 
     A swing high at index *i* has ``candle[i].high > all candles within
     n candles on each side``.  Symmetric rule for swing lows with ``.low``.
     """
-    # Limit to last 252 candles (1 year)
-    start = max(0, len(candles) - 252)
+    start = max(0, len(candles) - lookback)
     highs: list[SwingHigh] = []
     lows: list[SwingLow] = []
 

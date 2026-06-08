@@ -48,19 +48,7 @@ logger = logging.getLogger(__name__)
 class RejectedRRError(Exception):
     pass
 
-# ---------------------------------------------------------------------------
-# Cache: Nifty 50 candles (loaded once per scan_all run)
-# ---------------------------------------------------------------------------
-_nifty_candles: Optional[list[Candle]] = None
-
-
-def _load_nifty_candles() -> list[Candle]:
-    """Load ^NSEI OHLCV data for RS rank comparison."""
-    global _nifty_candles
-    if _nifty_candles is None:
-        rows = read_ohlcv("^NSEI")
-        _nifty_candles = rows_to_candles(rows) if rows else []
-    return _nifty_candles
+# No global cache needed, handled per-worker
 
 
 # ---------------------------------------------------------------------------
@@ -93,14 +81,34 @@ def scan_symbol(
     # get active patterns for this mode
     active_patterns = get_patterns(mode)
 
-    # Early candle-count gate — use the minimum across active patterns
-    min_candles_needed = min(p.config.min_candles for p in active_patterns)
-    if len(candles) < min_candles_needed:
+    MIN_CANDLES = {
+        "VCP": 60,
+        "FLAG_POLE": 60,
+        "CUP_HANDLE": 100,
+        "BREAKOUT": 75
+    }
+    active_patterns = [
+        p for p in active_patterns
+        if len(candles) >= MIN_CANDLES.get(p.config.name, 60)
+    ]
+    
+    if not active_patterns:
         return None
 
-    # 3. Stage 2 trend filter — skip if score < 60
     trend = analyze_trend(candles)
-    if trend.stage2_score < STAGE2_MIN_SCORE:
+    
+    STAGE2_MIN_SCORE_DICT = {
+        "VCP": 60,
+        "FLAG_POLE": 55,
+        "CUP_HANDLE": 45,
+        "BREAKOUT": 60
+    }
+    active_patterns = [
+        p for p in active_patterns
+        if trend.stage2_score >= STAGE2_MIN_SCORE_DICT.get(p.config.name, 60)
+    ]
+    
+    if not active_patterns:
         return None
 
     # 4. Volume analysis — skip if illiquid
@@ -112,7 +120,14 @@ def scan_symbol(
     # for ALL mode: use the strictest min_signal_score across patterns
     min_score = min(p.config.min_signal_score for p in active_patterns)
 
-    pivots = find_swing_pivots(candles)
+    PIVOT_LOOKBACK = {
+        "VCP": 60,
+        "FLAG_POLE": 60,
+        "CUP_HANDLE": 120,
+        "BREAKOUT": 75
+    }
+    max_lookback = max(PIVOT_LOOKBACK.get(p.config.name, 120) for p in active_patterns)
+    pivots = find_swing_pivots(candles, lookback=max_lookback)
 
     # run detectors — only for active patterns
     best_signal = None
@@ -130,11 +145,10 @@ def scan_symbol(
         return None
 
     # 6. RS rank vs Nifty 50
-    nifty = nifty_candles if nifty_candles is not None else _load_nifty_candles()
-    rs = compute_rs(candles, nifty)
+    rs = compute_rs(candles, nifty_candles if nifty_candles else [])
 
     # 7. Risk-reward — anchored to the pattern's config
-    rr = compute_risk_reward(candles, matched_pattern.config.rr_hard_minimum)
+    rr = compute_risk_reward(candles, matched_pattern.config.rr_hard_minimum, best_signal)
 
     # Gate: reject setups where risk-reward is invalid
     if rr.ratio <= 0:
@@ -217,8 +231,7 @@ def scan_all(
     Returns the top ``TOP_N_CANDIDATES`` results sorted by composite
     score descending, filtered by ``MIN_SIGNAL_SCORE``.
     """
-    global _nifty_candles
-    _nifty_candles = None  # reset cache for fresh data each run
+    # reset cache removed
 
     # mode validation
     if mode not in SCAN_MODES:

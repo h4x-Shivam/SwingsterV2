@@ -92,6 +92,8 @@ class PatternSignal:
     pivot_high: float = 0.0        # highest relevant pivot high
     contraction_depth: float = 0.0 # final contraction range %  (VCP-specific)
     contraction_count: int = 0     # number of contractions      (VCP-specific)
+    pattern_stop_loss: float | None = None  # pattern-geometry derived stop
+    pattern_target: float | None = None     # pattern-geometry derived target
 
 
 # ---------------------------------------------------------------------------

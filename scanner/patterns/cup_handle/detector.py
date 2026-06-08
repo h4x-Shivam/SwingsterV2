@@ -30,6 +30,15 @@ class CupHandlePattern(BasePattern):
             vol_handle_factor = self.config.extras.setdefault("vol_handle_factor", 0.70)
             buy_point_buffer = self.config.extras.setdefault("buy_point_buffer", 0.10)
 
+            vols = [c.volume for c in candles]
+            vol_prefix = [0] * (len(vols) + 1)
+            for idx in range(len(vols)):
+                vol_prefix[idx + 1] = vol_prefix[idx] + vols[idx]
+
+            def get_avg_vol(start, end):
+                if end < start: return 0
+                return (vol_prefix[end + 1] - vol_prefix[start]) / (end - start + 1)
+
             for lh_i, left_high in enumerate(swing_highs):
                 left_lip = left_high.price
                 if left_lip <= 0:
@@ -54,6 +63,13 @@ class CupHandlePattern(BasePattern):
                         cup_duration = rh.index - left_high.index
                         if cup_duration < min_cup_candles or cup_duration > max_cup_candles:
                             continue
+
+                        right_side = candles[sl.index : rh.index]
+                        if len(right_side) > 3:
+                            up_candles = sum(1 for c in right_side if c.close > c.open)
+                            down_ratio = 1 - (up_candles / len(right_side))
+                            if down_ratio > 0.40:
+                                continue
 
                         lip_diff_pct = abs(right_lip - left_lip) / left_lip * 100
                         if right_lip < left_lip * lip_tolerance_bottom_pct:
@@ -84,18 +100,17 @@ class CupHandlePattern(BasePattern):
 
                         handle_closes = [c.close for c in handle_candles]
                         if len(handle_closes) >= 2:
-                            h_slope = (handle_closes[-1] - handle_closes[0]) / (len(handle_closes) - 1)
-                            h_avg = sum(handle_closes) / len(handle_closes)
-                            h_slope_pct = (h_slope / h_avg * 100) if h_avg > 0 else 0
-                            if h_slope_pct > max_handle_slope_pct:
+                            mean_close = sum(handle_closes) / len(handle_closes)
+                            variance = max(abs(c - mean_close) for c in handle_closes) / mean_close
+                            if variance > 0.035:
                                 continue
 
                         cup_start = left_high.index
-                        cup_end = rh.index
-                        cup_vols = [candles[k].volume for k in range(cup_start, min(cup_end + 1, len(candles)))]
-                        handle_vols = [c.volume for c in handle_candles]
-                        avg_cup_vol = sum(cup_vols) / len(cup_vols) if cup_vols else 1
-                        avg_handle_vol = sum(handle_vols) / len(handle_vols) if handle_vols else 0
+                        cup_end = min(rh.index, len(candles) - 1)
+                        avg_cup_vol = get_avg_vol(cup_start, cup_end) if cup_end >= cup_start else 1
+                        
+                        handle_end_idx = handle_start + handle_len - 1
+                        avg_handle_vol = get_avg_vol(handle_start, handle_end_idx) if handle_end_idx >= handle_start else 0
 
                         if avg_cup_vol > 0 and avg_handle_vol >= avg_cup_vol * vol_handle_factor:
                             continue
@@ -104,6 +119,14 @@ class CupHandlePattern(BasePattern):
                         handle_high = max(c.high for c in handle_candles)
                         buy_point = handle_high + buy_point_buffer
                         distance_pct = ((buy_point - current_price) / current_price * 100) if current_price > 0 else 0
+
+                        penalty_dist = self.config.extras.setdefault("penalty_distance_pct", 5.0)
+                        if distance_pct > penalty_dist or distance_pct < -2.0:
+                            continue
+                            
+                        handle_end = handle_start + handle_len - 1
+                        if handle_end < len(candles) - 5:
+                            continue
 
                         strength = 0.0
 
@@ -149,6 +172,8 @@ class CupHandlePattern(BasePattern):
                                 distance_from_buy_pct=round(distance_pct, 2),
                                 breakout_level=round(handle_high, 2),
                                 pivot_high=round(left_lip, 2),
+                                pattern_stop_loss=round(handle_low * 0.99, 2),
+                                pattern_target=round(buy_point + (left_lip - cup_bottom), 2),
                             )
 
             return best_signal

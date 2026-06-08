@@ -9,7 +9,7 @@ resistance, then computes stop-loss (1% buffer below support), target
 
 from typing import Optional
 
-from scanner.models import Candle, RiskReward
+from scanner.models import Candle, RiskReward, PatternSignal
 
 
 import logging
@@ -78,6 +78,7 @@ def _find_swing_high_above(candles: list[Candle], current_price: float, n: int =
 def compute_risk_reward(
     candles: list[Candle],
     rr_hard_minimum: float = 0.8,
+    pattern_signal: Optional[PatternSignal] = None,
 ) -> RiskReward:
     """
     Compute risk-reward metrics for the symbol.
@@ -87,36 +88,43 @@ def compute_risk_reward(
 
     entry = candles[-1].close
 
-    # Support: most recent swing low (n=3, lookback 20 candles)
-    support = _find_swing_low(candles)
-    if support is None:
-        # Fallback: min low of last 20 candles
-        lookback_start = max(0, len(candles) - 20)
-        support = min(c.low for c in candles[lookback_start:])
+    if pattern_signal and pattern_signal.pattern_stop_loss and pattern_signal.pattern_target:
+        stop_loss = pattern_signal.pattern_stop_loss
+        target = pattern_signal.pattern_target
+        support = stop_loss / 0.99
+        resistance = target
+    else:
+        # Support: most recent swing low (n=3, lookback 20 candles)
+        support = _find_swing_low(candles)
+        if support is None:
+            # Fallback: min low of last 20 candles
+            lookback_start = max(0, len(candles) - 20)
+            support = min(c.low for c in candles[lookback_start:])
 
-    # Stop loss: 1% buffer below support
-    stop_loss = support * 0.99
+        # Stop loss: 1% buffer below support
+        stop_loss = support * 0.99
 
-    # HARD GUARD — stop must always be BELOW entry
-    if stop_loss >= entry:
-        stop_loss = min(c.low for c in candles[-20:]) * 0.99
-        logger.debug(f"Inverted stop detected, using fallback stop: {stop_loss:.2f}")
+        # HARD GUARD — stop must always be BELOW entry
+        if stop_loss >= entry:
+            stop_loss = min(c.low for c in candles[-20:]) * 0.99
+            logger.debug(f"Inverted stop detected, using fallback stop: {stop_loss:.2f}")
 
-    # Resistance / target: nearest swing high above entry
-    resistance = _find_swing_high_above(candles, entry)
-    if resistance is None:
-        resistance = entry * 1.15
+        # Resistance / target: nearest swing high above entry
+        resistance = _find_swing_high_above(candles, entry)
+        if resistance is None:
+            resistance = entry * 1.15
 
-    # Target: resistance level
-    target = resistance
+        # Target: resistance level
+        target = resistance
 
-    # HARD GUARD — target must always be ABOVE entry
-    if target <= entry:
-        target = entry * 1.15
-        logger.debug(f"Inverted target detected, using fallback target: {target:.2f}")
+        # HARD GUARD — target must always be ABOVE entry
+        if target <= entry:
+            target = entry * 1.15
+            logger.debug(f"Inverted target detected, using fallback target: {target:.2f}")
 
-    risk   = entry - stop_loss
-    reward = target - entry
+    buy_point = pattern_signal.buy_point if pattern_signal else entry
+    risk   = buy_point - stop_loss
+    reward = target - buy_point
 
     if risk <= 0:
         return RiskReward(
