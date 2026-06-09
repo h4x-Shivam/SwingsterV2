@@ -1,18 +1,7 @@
 {
   "mode": "VCP",
   "total_scanned": 2181,
-  "pattern_match_count": 2,
-  "rejected_by_rr": [
-    "EMCURE",
-    "IKS",
-    "SIEMENS",
-    "BHARATFORG",
-    "INOXINDIA",
-    "NITINSPIN",
-    "VARDHACRLC",
-    "ABCAPITAL",
-    "VASWANI",
-    "VTL"
-  ],
-  "timestamp": "2026-06-08T17:18:19.378589Z"
+  "pattern_match_count": 17,
+  "rejected_by_rr": [],
+  "timestamp": "2026-06-09T14:28:22.828228Z"
 }

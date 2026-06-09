@@ -121,9 +121,9 @@ def scan_symbol(
     min_score = min(p.config.min_signal_score for p in active_patterns)
 
     PIVOT_LOOKBACK = {
-        "VCP": 60,
+        "VCP": 120,
         "FLAG_POLE": 60,
-        "CUP_HANDLE": 120,
+        "CUP_HANDLE": 252,
         "BREAKOUT": 75
     }
     max_lookback = max(PIVOT_LOOKBACK.get(p.config.name, 120) for p in active_patterns)

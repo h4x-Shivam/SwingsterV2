@@ -122,9 +122,14 @@ def compute_risk_reward(
             target = entry * 1.15
             logger.debug(f"Inverted target detected, using fallback target: {target:.2f}")
 
-    buy_point = pattern_signal.buy_point if pattern_signal else entry
-    risk   = buy_point - stop_loss
-    reward = target - buy_point
+    # Use generic entry for fallback if no pattern geometry is provided to preserve baseline
+    calc_entry = entry
+    if pattern_signal and pattern_signal.pattern_stop_loss and pattern_signal.pattern_target:
+        if pattern_signal.buy_point:
+            calc_entry = pattern_signal.buy_point
+            
+    risk   = calc_entry - stop_loss
+    reward = target - calc_entry
 
     if risk <= 0:
         return RiskReward(
