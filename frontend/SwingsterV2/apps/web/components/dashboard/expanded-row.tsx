@@ -1,8 +1,79 @@
-import React from "react";
+"use client";
+import React, { useState, useEffect } from "react";
 import type { FinalPick } from "@/lib/data-fetcher";
 import { TradingViewChart } from "./trading-view-chart";
 
+// Fundamentals interface
+interface FundamentalsData {
+  market_cap?: string;
+  pe_ratio?: string;
+  roe?: string;
+  debt_to_equity?: string;
+  delivery_vol_pct?: number;
+  promoter_holding_pct?: number;
+  fii_holding_pct?: number;
+  pledge_pct?: number;
+}
+
+function getColorForDelivery(val?: number | null) {
+  if (val === null || val === undefined) return "text-white";
+  if (val >= 50) return "text-green-500";
+  if (val >= 30) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function getColorForPromoter(val?: number | null) {
+  if (val === null || val === undefined) return "text-white";
+  if (val >= 50) return "text-green-500";
+  if (val >= 35) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function getColorForFII(val?: number | null) {
+  if (val === null || val === undefined) return "text-white";
+  if (val >= 15) return "text-green-500";
+  if (val >= 5) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function getColorForPledge(val?: number | null) {
+  if (val === null || val === undefined) return "text-white";
+  if (val <= 5) return "text-green-500";
+  if (val <= 15) return "text-yellow-500";
+  return "text-red-500";
+}
+
+function formatVal(val: any, isPct = false) {
+  if (val === null || val === undefined || val === "" || val === "N/A") return "—";
+  if (isPct) return `${Number(val).toFixed(1)}%`;
+  return val;
+}
+
 export function ExpandedRow({ pick }: { pick: FinalPick }) {
+  const [fundamentals, setFundamentals] = useState<FundamentalsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchFundamentals = async () => {
+      try {
+        const res = await fetch(`/api/fundamentals?symbol=${encodeURIComponent(pick.symbol)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (isMounted) {
+            setFundamentals(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch fundamentals", err);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+    fetchFundamentals();
+    return () => { isMounted = false; };
+  }, [pick.symbol]);
+
   const scores = [
     { label: "Pattern Quality", value: pick.signal_strength, weight: "40%" },
     { label: "Volume Confirmation", value: pick.volume_score, weight: "25%" },
@@ -17,7 +88,7 @@ export function ExpandedRow({ pick }: { pick: FinalPick }) {
     { label: "Breakout Level", value: `₹${pick.buy_point.toFixed(2)}` },
     { label: "Stop Loss", value: `₹${pick.stop_loss.toFixed(2)}` },
     { label: "Target 1", value: `₹${pick.target.toFixed(2)}` },
-    { label: "Target 2", value: `₹${pick.target2?.toFixed(2) || "N/A"}` },
+    { label: "Target 2", value: `₹${pick.target2?.toFixed(2) || "—"}` },
     { label: "Risk:Reward", value: `${pick.rr_ratio.toFixed(1)} : 1` },
     { label: "Confidence", value: pick.conviction, color: pick.conviction === "HIGH" ? "text-emerald-400" : "text-teal-400" },
     { label: "Pattern Age", value: `${pick.pattern_age} Days` },
@@ -60,31 +131,75 @@ export function ExpandedRow({ pick }: { pick: FinalPick }) {
         </div>
 
         {/* Fundamentals (New) */}
-        {pick.fundamentals && (
-          <div className="bg-[#121216] border border-white/5 rounded-xl p-6">
-            <h4 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">
-              Fundamental Data (NSE)
-            </h4>
-            <div className="grid grid-cols-2 gap-4">
+        <div className="bg-[#121216] border border-white/5 rounded-xl p-6">
+          <h4 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">
+            Fundamental Data (NSE)
+          </h4>
+          
+          {isLoading ? (
+            <div className="flex items-center justify-center p-8 space-x-3">
+              <div className="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+              <span className="text-sm text-white/50 animate-pulse">Loading fundamental data...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
               <div className="bg-black/30 p-3 rounded-lg border border-white/5">
                 <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Market Cap</div>
-                <div className="text-sm font-mono text-white">{pick.fundamentals.market_cap}</div>
+                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.market_cap)}</div>
               </div>
               <div className="bg-black/30 p-3 rounded-lg border border-white/5">
                 <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">P/E Ratio</div>
-                <div className="text-sm font-mono text-white">{pick.fundamentals.pe_ratio}</div>
+                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.pe_ratio)}</div>
               </div>
               <div className="bg-black/30 p-3 rounded-lg border border-white/5">
                 <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">ROE</div>
-                <div className="text-sm font-mono text-emerald-400">{pick.fundamentals.roe}</div>
+                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.roe, true)}</div>
               </div>
               <div className="bg-black/30 p-3 rounded-lg border border-white/5">
                 <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Debt to Equity</div>
-                <div className="text-sm font-mono text-white">{pick.fundamentals.debt_to_equity}</div>
+                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.debt_to_equity)}</div>
+              </div>
+              
+              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Delivery Vol %</div>
+                <div className={`text-sm font-mono ${getColorForDelivery(fundamentals?.delivery_vol_pct)}`}>
+                  {formatVal(fundamentals?.delivery_vol_pct, true)}
+                </div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
+                  Percentage of today's volume that resulted in actual delivery. Higher = stronger institutional accumulation.
+                </div>
+              </div>
+
+              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Promoter / FII</div>
+                <div className="text-sm font-mono">
+                  <span className={getColorForPromoter(fundamentals?.promoter_holding_pct)}>{formatVal(fundamentals?.promoter_holding_pct, true)}</span>
+                  <span className="text-white/30 mx-1">|</span>
+                  <span className={getColorForFII(fundamentals?.fii_holding_pct)}>{formatVal(fundamentals?.fii_holding_pct, true)}</span>
+                </div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
+                  High promoter holding signals insider confidence. Rising FII holding signals institutional accumulation.
+                </div>
+              </div>
+
+              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative col-span-2">
+                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Pledge %</div>
+                <div className={`text-sm font-mono flex items-center gap-1 ${getColorForPledge(fundamentals?.pledge_pct)}`}>
+                  {formatVal(fundamentals?.pledge_pct, true)}
+                  {(fundamentals?.pledge_pct ?? 0) > 20 && (
+                    <span title="High promoter pledge is a risk flag. Forced selling risk increases above 20%.">⚠️</span>
+                  )}
+                </div>
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
+                  High promoter pledge is a risk flag. Forced selling risk increases above 20%.
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ── Center Column: Score Breakdown & Details ── */}

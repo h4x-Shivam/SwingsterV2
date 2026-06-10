@@ -34,12 +34,7 @@ export interface FinalPick {
   rs_score: number;
   judge_verdict: string;
   flags: string;
-  fundamentals: {
-    market_cap: string;
-    pe_ratio: string;
-    roe: string;
-    debt_to_equity: string;
-  };
+  pledge_pct?: number | null;
   // Optional fields not yet emitted by the scanner
   sector?: string;
   target2?: number;

@@ -26,7 +26,7 @@ _LLM_FIELDS = [
     "symbol", "pattern", "signal_strength", "volume_score",
     "stage2_score", "rs_score", "composite_score",
     "buy_point", "stop_loss", "target", "rr_ratio",
-    "current_price", "distance_from_buy_pct",
+    "current_price", "distance_from_buy_pct", "pledge_pct"
 ]
 
 def _slim_candidates(candidates: list[dict]) -> list[dict]:
@@ -106,6 +106,7 @@ Apply ALL of the following criteria in order of importance:
 QUALITATIVE CHECKS before finalising:
 - For each pick ask: "Would a Minervini-style trader take this trade today?"
   If answer is "maybe" — discard it.
+- If pledge_pct is provided and exceeds 20%, flag this as a HIGH RISK warning in the verdict regardless of other scores. If pledge_pct exceeds 35%, downgrade conviction by one level: HIGH becomes MEDIUM, MEDIUM becomes LOW. If pledge_pct is None or not provided, do not mention or speculate about pledge in the verdict.
 
 RETURN FORMAT — THIS IS CRITICAL FOR GROQ:
 You MUST return ONLY a raw JSON array.

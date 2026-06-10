@@ -2,8 +2,33 @@ import requests
 import time
 import yfinance as yf
 
+# Global persistent session for NSE requests
+_nse_session = None
+
+def _get_nse_session():
+    global _nse_session
+    if _nse_session is None:
+        _nse_session = requests.Session()
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+            "Accept": "application/json",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Referer": "https://www.nseindia.com/",
+            "Connection": "keep-alive"
+        }
+        _nse_session.headers.update(headers)
+        try:
+            _nse_session.get("https://www.nseindia.com", timeout=12)
+            time.sleep(0.5)
+        except Exception as e:
+            print(f"[NSE] Failed to establish session cookies: {e}")
+    return _nse_session
+
+def _clean_symbol(symbol: str) -> str:
+    return symbol.replace(".NS", "").replace(".NSE", "").upper().strip()
+
 def _nse_fetch(symbol: str) -> dict:
-    symbol = symbol.upper().strip()
+    symbol = _clean_symbol(symbol)
     try:
         from jugaad_data.nse import NSELive
         nse   = NSELive()
@@ -16,31 +41,11 @@ def _nse_fetch(symbol: str) -> dict:
         print(f"[NSE/jugaad] {symbol}: {e}")
     return _nse_direct(symbol)
 
-
 def _nse_direct(symbol: str) -> dict:
+    symbol = _clean_symbol(symbol)
     BASE = "https://www.nseindia.com"
-    headers = {
-        "Host":             "www.nseindia.com",
-        "Referer":          f"https://www.nseindia.com/get-quotes/equity?symbol={symbol}",
-        "X-Requested-With": "XMLHttpRequest",
-        "User-Agent":       (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36"
-        ),
-        "Accept":           "*/*",
-        "Accept-Language":  "en-GB,en-US;q=0.9,en;q=0.8",
-        "Accept-Encoding":  "gzip, deflate",
-        "Cache-Control":    "no-cache",
-        "Connection":       "keep-alive",
-        "sec-fetch-dest":   "empty",
-        "sec-fetch-mode":   "cors",
-        "sec-fetch-site":   "same-origin",
-    }
-    s = requests.Session()
-    s.headers.update(headers)
+    s = _get_nse_session()
     try:
-        s.get(f"{BASE}/get-quotes/equity?symbol={symbol}", timeout=12)
-        time.sleep(0.5)
         r1    = s.get(f"{BASE}/api/quote-equity", params={"symbol": symbol}, timeout=14)
         quote = r1.json() if r1.status_code == 200 else {}
         r2    = s.get(f"{BASE}/api/quote-equity",
@@ -52,7 +57,6 @@ def _nse_direct(symbol: str) -> dict:
         return {"ok": False, "_error": "NSE returned empty response"}
     return _parse_nse_response(symbol, quote, trade, source="NSE direct")
 
-
 def _safe_get(d, *keys, default=None):
     for k in keys:
         if isinstance(d, dict):
@@ -60,7 +64,6 @@ def _safe_get(d, *keys, default=None):
         else:
             return default
     return d if d is not None else default
-
 
 def _parse_nse_response(symbol: str, quote: dict, trade: dict, source: str = "NSE") -> dict:
     pi   = quote.get("priceInfo", {})
@@ -104,7 +107,6 @@ def _parse_nse_response(symbol: str, quote: dict, trade: dict, source: str = "NS
         "delivery_qty":  _safe_get(ti, "deliveryQuantity"),
         "delivery_pct":  _safe_get(ti, "deliveryToTradedQuantity"),
     }
-
 
 def _yf_fetch(ticker_ns: str) -> dict:
     try:
@@ -153,7 +155,6 @@ def _yf_fetch(ticker_ns: str) -> dict:
     except Exception as e:
         return {"ok": False, "_yf_error": str(e), "hist": None}
 
-
 def _jugaad_extras(symbol: str) -> dict:
     try:
         from jugaad_data.nse import live_stock_data
@@ -165,3 +166,77 @@ def _jugaad_extras(symbol: str) -> dict:
         }
     except Exception:
         return {}
+
+def fetch_from_nse(symbol: str, timeout: int = 5) -> dict:
+    symbol = _clean_symbol(symbol)
+    s = _get_nse_session()
+    BASE = "https://www.nseindia.com"
+    data = {}
+    try:
+        r1 = s.get(f"{BASE}/api/quote-equity", params={"symbol": symbol}, timeout=timeout)
+        if r1.status_code == 200:
+            quote = r1.json()
+            data["market_cap"] = _safe_get(quote, "priceInfo", "totalMarketCap") or _safe_get(quote, "metadata", "pdSymbolPe", "symbolMarketCap")
+            data["pe_ratio"] = _safe_get(quote, "metadata", "pdSymbolPe", "symbolPe")
+            # For roe and d/e, they might not be in quote-equity. Wait, sometimes they aren't.
+            data["roe"] = None 
+            data["debt_to_equity"] = None
+        
+        r2 = s.get(f"{BASE}/api/quote-equity", params={"symbol": symbol, "section": "trade_info"}, timeout=timeout)
+        if r2.status_code == 200:
+            trade = r2.json()
+            data["delivery_vol_pct"] = _safe_get(trade, "tradeInfo", "deliveryToTradedQuantity")
+
+        r3 = s.get(f"{BASE}/api/shareholding-patterns", params={"symbol": symbol}, timeout=timeout)
+        if r3.status_code == 200:
+            sh = r3.json()
+            try:
+                # Shareholding pattern data structure varies, we extract carefully
+                if isinstance(sh, dict) and "data" in sh:
+                    sh_data = sh["data"]
+                    if len(sh_data) > 0:
+                        latest = sh_data[0] # assuming sorted by latest
+                        data["promoter_holding_pct"] = latest.get("promoterAndPromoterGroup")
+                        data["fii_holding_pct"] = latest.get("foreignInstInvestors", None)
+                        data["pledge_pct"] = latest.get("pledgedEncumbered")
+            except Exception:
+                pass
+    except Exception as e:
+        print(f"[NSE Fallback] {symbol} error: {e}")
+        pass
+    return data
+
+def fetch_fundamentals_with_fallback(symbol: str) -> dict:
+    try:
+        data = fetch_from_nse(symbol, timeout=5)
+        if data and data.get("market_cap"):
+            return data
+    except Exception:
+        pass
+
+    # Tier 2: Yahoo Finance fallback for core fields only
+    try:
+        ticker = yf.Ticker(f"{_clean_symbol(symbol)}.NS")
+        info = ticker.info
+        return {
+            "market_cap": info.get("marketCap"),
+            "pe_ratio": info.get("trailingPE"),
+            "roe": None,
+            "debt_to_equity": None,
+            "delivery_vol_pct": None,
+            "promoter_holding_pct": None,
+            "fii_holding_pct": None,
+            "pledge_pct": None,
+        }
+    except Exception:
+        pass
+
+    # Tier 3: all dashes
+    return {}
+
+def fetch_pledge_pct(symbol: str, timeout: int = 3):
+    try:
+        data = fetch_from_nse(symbol, timeout=timeout)
+        return data.get("pledge_pct")
+    except Exception:
+        return None
