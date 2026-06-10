@@ -234,7 +234,7 @@ export function PatternShowcase() {
   return (
     <section
       id="pattern-showcase"
-      className="relative w-full py-20 md:py-32 bg-transparent"
+      className="relative w-full py-20 md:py-32 bg-transparent overflow-hidden"
     >
       {/* ── Section header ── */}
       <div className="mx-auto max-w-5xl px-6 text-center mb-16">

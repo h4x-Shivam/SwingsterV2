@@ -5,6 +5,7 @@ import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
 import { LiquidEther } from "@/components/ui/liquid-ether";
 
+
 export default function Page() {
   return (
     <main className="bg-surface min-h-screen relative">

@@ -1,6 +1,6 @@
 {
   "scan_mode": "VCP",
-  "scan_time": "2026-06-10 16:44:42",
+  "scan_time": "2026-06-10 22:57:51",
   "total_picks": 10,
   "results": [
     {
@@ -20,8 +20,8 @@
       "distance_from_buy_pct": 1.23,
       "scan_mode": "VCP",
       "pledge_pct": null,
-      "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. Close to buy point at 1.23% above.",
+      "conviction": "HIGH",
+      "judge_verdict": "VCP pattern with strong signal strength, high volume score, and good risk/reward ratio. Close to buy point with 1.23% distance.",
       "flags": "",
       "rank": 1
     },
@@ -43,7 +43,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with high volume score and strong relative strength. Close to buy point at 0.46% above.",
+      "judge_verdict": "VCP pattern with high volume score and good risk/reward ratio. Close to buy point with 0.46% distance.",
       "flags": "",
       "rank": 2
     },
@@ -65,7 +65,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong relative strength but low volume score and high distance from buy point.",
+      "judge_verdict": "VCP pattern with high stage2 score and good risk/reward ratio. However, volume score is low and distance from buy point is high at 5.87%.",
       "flags": "",
       "rank": 3
     },
@@ -87,7 +87,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with low relative strength and low volume score. Close to buy point at 2.52% above.",
+      "judge_verdict": "VCP pattern with low rs score and low risk/reward ratio. Close to buy point with 2.52% distance.",
       "flags": "",
       "rank": 4
     },
@@ -109,7 +109,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong relative strength and high risk/reward ratio. Close to buy point at -0.43% below.",
+      "judge_verdict": "VCP pattern with high stage2 score and good risk/reward ratio. However, volume score is low and distance from buy point is negative at -0.43%.",
       "flags": "",
       "rank": 5
     },
@@ -131,7 +131,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong stage2_score and rs_score. However, distance_from_buy_pct is -1.69%, which is a bit far from ideal.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, distance from buy point is -1.69%, which is slightly below ideal.",
       "flags": "",
       "rank": 6
     },
@@ -153,7 +153,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong stage2_score and rs_score. However, volume_score is 42.1, which is below the preferred threshold.",
+      "judge_verdict": "VCP pattern with strong signal strength and stage2 score. However, volume score is below 75, and distance from buy point is 5.49%, which is above ideal.",
       "flags": "",
       "rank": 7
     },
@@ -175,7 +175,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong stage2_score and rs_score. However, signal_strength is 60, which is below the preferred threshold.",
+      "judge_verdict": "VCP pattern with strong volume score and stage2 score. However, signal strength is below 65, and distance from buy point is 5.71%, which is above ideal.",
       "flags": "",
       "rank": 8
     },
@@ -197,7 +197,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong stage2_score and rs_score. However, signal_strength is 60, which is below the preferred threshold.",
+      "judge_verdict": "VCP pattern with strong stage2 score and rs score. However, signal strength is below 65, and distance from buy point is 4.87%, which is above ideal.",
       "flags": "",
       "rank": 9
     },
@@ -219,7 +219,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong stage2_score and rs_score. However, signal_strength is 60, which is below the preferred threshold.",
+      "judge_verdict": "VCP pattern with strong stage2 score and rs score. However, signal strength is below 65, and distance from buy point is 2.83%, which is above ideal.",
       "flags": "",
       "rank": 10
     }
