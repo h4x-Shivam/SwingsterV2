@@ -67,7 +67,7 @@ MAX_CANDIDATES = 20            # fallback pool size for ALL mode
 GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")
 GROQ_MODEL           = "llama-3.1-8b-instant"       # free-tier friendly
 GROQ_MODEL_FALLBACK  = "llama-3.3-70b-versatile"     # for paid tier
-GROQ_MAX_TOKENS      = 4000
+GROQ_MAX_TOKENS      = 1024
 GROQ_TIMEOUT         = 60     # seconds
 
 
