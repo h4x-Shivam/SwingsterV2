@@ -41,7 +41,7 @@ export function DashboardHeader({
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-white mb-2">
           Dashboard
         </h1>
-        <p className="text-white/40 text-sm font-mono">
+        <p className="text-white/40 text-sm font-mono" suppressHydrationWarning>
           Last scan: {summary?.timestamp ? new Date(summary.timestamp).toLocaleString() : "Just now"}
         </p>
       </div>
