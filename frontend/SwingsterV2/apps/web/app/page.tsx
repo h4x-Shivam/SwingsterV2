@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/components/hero-section";
+import { HowItWorks } from "@/components/how-it-works";
 import { PatternShowcase } from "@/components/pattern-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
 import { QuoteSection } from "@/components/quote-section";
@@ -25,6 +26,7 @@ export default function Page() {
 
       <div className="relative z-10">
         <HeroSection />
+        <HowItWorks />
         <PatternShowcase />
         <UnderTheHood />
         <QuoteSection />

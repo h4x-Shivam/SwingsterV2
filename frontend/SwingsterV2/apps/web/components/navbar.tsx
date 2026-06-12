@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 const navLinks = [
   // Features section does not exist yet, commented out for now.
   // { name: "Features", href: "#features" },
+  { name: "Home", href: "#top" },
   { name: "Patterns", href: "#patterns" },
   { name: "How It Works", href: "#how-it-works" },
   { name: "About", href: "#about" },
