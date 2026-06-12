@@ -1,14 +1,16 @@
+import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/components/hero-section";
 import { PatternShowcase } from "@/components/pattern-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
 import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
+import { Footer } from "@/components/footer";
 import { LiquidEther } from "@/components/ui/liquid-ether";
-
 
 export default function Page() {
   return (
-    <main className="bg-surface min-h-screen relative">
+    <main id="top" className="bg-surface min-h-screen relative">
+      <Navbar />
       {/* ── Global Liquid Ether Background ── */}
       <div className="fixed inset-0 z-0 opacity-60 mix-blend-screen pointer-events-none">
         <LiquidEther
@@ -27,6 +29,7 @@ export default function Page() {
         <UnderTheHood />
         <QuoteSection />
         <AboutSection />
+        <Footer />
       </div>
     </main>
   );

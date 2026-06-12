@@ -232,9 +232,9 @@ export function PatternShowcase() {
   }, [activeScanId]);
 
   return (
-    <section
-      id="pattern-showcase"
-      className="relative w-full py-20 md:py-32 bg-transparent overflow-hidden"
+    <section 
+      id="patterns"
+      className="relative w-full py-20 md:py-32 bg-transparent overflow-hidden scroll-mt-24"
     >
       {/* ── Section header ── */}
       <div className="mx-auto max-w-5xl px-6 text-center mb-16">

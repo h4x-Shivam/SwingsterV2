@@ -49,7 +49,7 @@ const stages = [
 
 export function UnderTheHood() {
   return (
-    <section className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden">
+    <section id="how-it-works" className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden scroll-mt-24">
       {/* Background glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
 

@@ -6,7 +6,7 @@ import { BorderGlow } from "@/components/ui/border-glow";
 
 export function AboutSection() {
   return (
-    <section className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden">
+    <section id="about" className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden scroll-mt-24">
       <div className="relative z-10 max-w-6xl mx-auto px-6">
         
         {/* Section Header */}
@@ -118,16 +118,6 @@ export function AboutSection() {
           </motion.div>
         </div>
 
-        {/* Footer text */}
-        <div className="mt-24 pt-8 border-t border-white/10 text-center flex flex-col items-center justify-center">
-          <div className="flex items-center gap-2 mb-4">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><polygon points="12 2 2 22 12 17 22 22 12 2"></polygon></svg>
-            <span className="text-xl font-bold text-white tracking-widest uppercase">Swingster</span>
-          </div>
-          <p className="text-sm text-white/40">
-            © {new Date().getFullYear()} Swingster. Developed with precision by Shivam.
-          </p>
-        </div>
       </div>
     </section>
   );
