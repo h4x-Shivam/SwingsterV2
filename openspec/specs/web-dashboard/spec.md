@@ -29,3 +29,5 @@ The dashboard UI SHALL accurately reflect the 5-part composite score logic used 
 - **THEN** the system SHALL display an expanded detail view or drawer
 - **AND** render the AI Judge's qualitative verdict and any warning flags
 - **AND** display the breakdown of the composite score: Signal Strength (45% for VCP), Volume Score (30%), Risk-Reward (10%), Stage 2 Trend (10%), and Relative Strength (5%).
+- **AND** provide a prominent "Deep Dive into Fundamentals" card with an external link button
+- **AND** clicking the button SHALL open a new browser tab to `https://www.screener.in/company/<SYMBOL>/` using a cleaned symbol (e.g. `RELIANCE` instead of `RELIANCE.NS`).

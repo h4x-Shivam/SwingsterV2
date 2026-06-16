@@ -1,78 +1,17 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React from "react";
 import type { FinalPick } from "@/lib/data-fetcher";
 import { TradingViewChart } from "./trading-view-chart";
 
-// Fundamentals interface
-interface FundamentalsData {
-  market_cap?: string;
-  pe_ratio?: string;
-  roe?: string;
-  debt_to_equity?: string;
-  delivery_vol_pct?: number;
-  promoter_holding_pct?: number;
-  fii_holding_pct?: number;
-  pledge_pct?: number;
-}
-
-function getColorForDelivery(val?: number | null) {
-  if (val === null || val === undefined) return "text-white";
-  if (val >= 50) return "text-green-500";
-  if (val >= 30) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function getColorForPromoter(val?: number | null) {
-  if (val === null || val === undefined) return "text-white";
-  if (val >= 50) return "text-green-500";
-  if (val >= 35) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function getColorForFII(val?: number | null) {
-  if (val === null || val === undefined) return "text-white";
-  if (val >= 15) return "text-green-500";
-  if (val >= 5) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function getColorForPledge(val?: number | null) {
-  if (val === null || val === undefined) return "text-white";
-  if (val <= 5) return "text-green-500";
-  if (val <= 15) return "text-yellow-500";
-  return "text-red-500";
-}
-
-function formatVal(val: any, isPct = false) {
-  if (val === null || val === undefined || val === "" || val === "N/A") return "—";
-  if (isPct) return `${Number(val).toFixed(1)}%`;
-  return val;
+function getScreenerSymbol(rawSymbol: string): string {
+  return rawSymbol
+    .replace(/\.(NS|NSE|BO|BSE)$/i, '')
+    .replace(/-EQ$/i, '')
+    .trim()
+    .toUpperCase();
 }
 
 export function ExpandedRow({ pick }: { pick: FinalPick }) {
-  const [fundamentals, setFundamentals] = useState<FundamentalsData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    const fetchFundamentals = async () => {
-      try {
-        const res = await fetch(`/api/fundamentals?symbol=${encodeURIComponent(pick.symbol)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (isMounted) {
-            setFundamentals(data);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to fetch fundamentals", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    fetchFundamentals();
-    return () => { isMounted = false; };
-  }, [pick.symbol]);
 
   const scores = [
     { label: "Pattern Quality", value: pick.signal_strength, weight: "40%" },
@@ -130,75 +69,24 @@ export function ExpandedRow({ pick }: { pick: FinalPick }) {
           )}
         </div>
 
-        {/* Fundamentals (New) */}
-        <div className="bg-[#121216] border border-white/5 rounded-xl p-6">
-          <h4 className="text-xs font-semibold text-white/50 uppercase tracking-widest mb-4">
-            Fundamental Data (NSE)
-          </h4>
-          
-          {isLoading ? (
-            <div className="flex items-center justify-center p-8 space-x-3">
-              <div className="w-5 h-5 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
-              <span className="text-sm text-white/50 animate-pulse">Loading fundamental data...</span>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Market Cap</div>
-                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.market_cap)}</div>
-              </div>
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">P/E Ratio</div>
-                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.pe_ratio)}</div>
-              </div>
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">ROE</div>
-                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.roe, true)}</div>
-              </div>
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Debt to Equity</div>
-                <div className="text-sm font-mono text-white">{formatVal(fundamentals?.debt_to_equity)}</div>
-              </div>
-              
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Delivery Vol %</div>
-                <div className={`text-sm font-mono ${getColorForDelivery(fundamentals?.delivery_vol_pct)}`}>
-                  {formatVal(fundamentals?.delivery_vol_pct, true)}
-                </div>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
-                  Percentage of today's volume that resulted in actual delivery. Higher = stronger institutional accumulation.
-                </div>
-              </div>
-
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Promoter / FII</div>
-                <div className="text-sm font-mono">
-                  <span className={getColorForPromoter(fundamentals?.promoter_holding_pct)}>{formatVal(fundamentals?.promoter_holding_pct, true)}</span>
-                  <span className="text-white/30 mx-1">|</span>
-                  <span className={getColorForFII(fundamentals?.fii_holding_pct)}>{formatVal(fundamentals?.fii_holding_pct, true)}</span>
-                </div>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
-                  High promoter holding signals insider confidence. Rising FII holding signals institutional accumulation.
-                </div>
-              </div>
-
-              <div className="bg-black/30 p-3 rounded-lg border border-white/5 group relative col-span-2">
-                <div className="text-[10px] text-white/40 uppercase tracking-wider mb-1 border-b border-dashed border-white/20 inline-block pb-0.5 cursor-help">Pledge %</div>
-                <div className={`text-sm font-mono flex items-center gap-1 ${getColorForPledge(fundamentals?.pledge_pct)}`}>
-                  {formatVal(fundamentals?.pledge_pct, true)}
-                  {(fundamentals?.pledge_pct ?? 0) > 20 && (
-                    <span title="High promoter pledge is a risk flag. Forced selling risk increases above 20%.">⚠️</span>
-                  )}
-                </div>
-                {/* Tooltip */}
-                <div className="absolute bottom-full left-0 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 border border-white/10 text-xs text-white/80 rounded shadow-xl z-10">
-                  High promoter pledge is a risk flag. Forced selling risk increases above 20%.
-                </div>
-              </div>
-            </div>
-          )}
+        {/* Fundamentals Redirect */}
+        <div className="bg-[#121216] border border-white/5 rounded-xl p-6 flex flex-col justify-center items-center text-center">
+          <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-4 border border-white/10">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><path d="M21 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h6"></path><polyline points="21 3 14 3 14 10"></polyline><line x1="21" y1="3" x2="10" y2="14"></line></svg>
+          </div>
+          <h4 className="text-sm font-semibold text-white mb-2">Deep Dive into Fundamentals</h4>
+          <p className="text-xs text-white/50 mb-6 max-w-xs">
+            View detailed financial statements, ratios, and shareholding patterns for {pick.symbol} on Screener.in
+          </p>
+          <a
+            href={`https://www.screener.in/company/${getScreenerSymbol(pick.symbol)}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-[#060608] font-bold text-sm tracking-wide rounded-lg transition-colors shadow-[0_0_15px_rgba(16,185,129,0.2)] flex items-center gap-2"
+          >
+            Open Screener.in
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+          </a>
         </div>
       </div>
 

@@ -206,33 +206,6 @@ def fetch_from_nse(symbol: str, timeout: int = 5) -> dict:
         pass
     return data
 
-def fetch_fundamentals_with_fallback(symbol: str) -> dict:
-    try:
-        data = fetch_from_nse(symbol, timeout=5)
-        if data and data.get("market_cap"):
-            return data
-    except Exception:
-        pass
-
-    # Tier 2: Yahoo Finance fallback for core fields only
-    try:
-        ticker = yf.Ticker(f"{_clean_symbol(symbol)}.NS")
-        info = ticker.info
-        return {
-            "market_cap": info.get("marketCap"),
-            "pe_ratio": info.get("trailingPE"),
-            "roe": None,
-            "debt_to_equity": None,
-            "delivery_vol_pct": None,
-            "promoter_holding_pct": None,
-            "fii_holding_pct": None,
-            "pledge_pct": None,
-        }
-    except Exception:
-        pass
-
-    # Tier 3: all dashes
-    return {}
 
 def fetch_pledge_pct(symbol: str, timeout: int = 3):
     try:
