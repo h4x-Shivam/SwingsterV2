@@ -4,6 +4,7 @@ import React from "react";
 import { StickyScroll } from "@/components/ui/sticky-scroll-reveal";
 import { patterns, type PatternData } from "@/data/patterns";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 import { BorderGlow } from "@/components/ui/border-glow";
 import { ScanProgressTerminal } from "@/components/scan-progress-terminal";
@@ -193,7 +194,7 @@ function closePath(pathD: string, viewBox: string): string {
 }
 
 /* ── Slide 2 — Pattern Showcase section ── */
-export function PatternShowcase() {
+export function PatternShowcase({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const router = useRouter();
   const [activeScanId, setActiveScanId] = React.useState<string | null>(null);
   const [selectedCardId, setSelectedCardId] = React.useState<string | null>(null);
@@ -266,22 +267,51 @@ export function PatternShowcase() {
 
       {/* ── Sticky scroll content ── */}
       <div className="mx-auto max-w-6xl px-4">
-        <StickyScroll
-          content={stickyContent}
-          isScanning={activeScanId !== null}
-          activeCardOverride={activeScanIndex}
-          progressUI={
-            activePattern ? (
-              <ScanProgressTerminal
-                patternName={activePattern.mode}
-                onComplete={() => {
-                  router.push("/dashboard");
-                  setTimeout(() => setActiveScanId(null), 500); // clear state after routing
-                }}
+        {isAuthenticated ? (
+          <StickyScroll
+            content={stickyContent}
+            isScanning={activeScanId !== null}
+            activeCardOverride={activeScanIndex}
+            progressUI={
+              activePattern ? (
+                <ScanProgressTerminal
+                  patternName={activePattern.mode}
+                  onComplete={() => {
+                    router.push("/dashboard");
+                    setTimeout(() => setActiveScanId(null), 500); // clear state after routing
+                  }}
+                />
+              ) : null
+            }
+          />
+        ) : (
+          <div className="relative w-full overflow-hidden rounded-2xl border border-white/10 bg-[#0c0c10]/50 p-8 min-h-[600px] flex flex-col items-center justify-center">
+            {/* Blurry background teaser */}
+            <div className="absolute inset-0 z-0 blur-[12px] opacity-30 pointer-events-none select-none">
+              <StickyScroll
+                content={stickyContent}
+                isScanning={false}
+                activeCardOverride={undefined}
+                progressUI={null}
               />
-            ) : null
-          }
-        />
+            </div>
+            
+            {/* Glassmorphic Lock Overlay */}
+            <div className="relative z-10 flex flex-col items-center text-center p-8 rounded-3xl bg-[#0f0f0f]/80 backdrop-blur-xl border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.15)] max-w-md mx-auto">
+              <div className="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(16,185,129,0.4)]">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-3">Unlock the Pattern Engine</h3>
+              <p className="text-white/60 mb-8 leading-relaxed">Sign in to run live scans and see real-time breakout setups across 2,000+ NSE stocks.</p>
+              <Link href="/login" className="px-8 py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-full transition-all duration-300 shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] w-full">
+                Sign In to Unlock
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

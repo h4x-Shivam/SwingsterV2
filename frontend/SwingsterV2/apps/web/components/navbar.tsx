@@ -4,17 +4,15 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { motion } from "motion/react";
 
-// The sections to track and link to
-const navLinks = [
-  // Features section does not exist yet, commented out for now.
-  // { name: "Features", href: "#features" },
-  { name: "Home", href: "#top" },
-  { name: "How It Works", href: "#how-it-works" },
-  { name: "Patterns", href: "#patterns" },
-  { name: "About", href: "#about" },
-];
-
-export function Navbar() {
+export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
+  const navLinks = [
+    // Features section does not exist yet, commented out for now.
+    // { name: "Features", href: "#features" },
+    { name: "Home", href: "#top" },
+    { name: "How It Works", href: "#how-it-works" },
+    ...(isAuthenticated ? [{ name: "Patterns", href: "#patterns" }] : []),
+    { name: "About", href: "#about" },
+  ];
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("");
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
@@ -151,12 +149,23 @@ export function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:block">
-            <Link 
-              href="/signup" 
-              className="px-5 py-2 text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-black rounded-full transition-colors inline-block shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-            >
-              Get Early Access
-            </Link>
+            {isAuthenticated ? (
+              <form action="/auth/signout" method="post">
+                <button 
+                  type="submit"
+                  className="px-5 py-2 text-sm font-bold bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full transition-colors inline-block"
+                >
+                  Sign Out
+                </button>
+              </form>
+            ) : (
+              <Link 
+                href="/login" 
+                className="px-5 py-2 text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-black rounded-full transition-colors inline-block shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+              >
+                Log In
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -188,13 +197,25 @@ export function Navbar() {
               </a>
             ))}
             <div className="pt-2">
-              <Link 
-                href="/signup" 
-                className="block w-full text-center px-5 py-3 text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-black rounded-full transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Get Early Access
-              </Link>
+              {isAuthenticated ? (
+                <form action="/auth/signout" method="post" className="w-full">
+                  <button 
+                    type="submit"
+                    className="block w-full text-center px-5 py-3 text-sm font-bold bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-full transition-colors"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    Sign Out
+                  </button>
+                </form>
+              ) : (
+                <Link 
+                  href="/login" 
+                  className="block w-full text-center px-5 py-3 text-sm font-bold bg-emerald-500 hover:bg-emerald-400 text-black rounded-full transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  Log In
+                </Link>
+              )}
             </div>
           </div>
         )}

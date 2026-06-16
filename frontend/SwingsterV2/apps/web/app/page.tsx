@@ -3,15 +3,21 @@ import { HeroSection } from "@/components/hero-section";
 import { HowItWorks } from "@/components/how-it-works";
 import { PatternShowcase } from "@/components/pattern-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
+import { PricingSection } from "@/components/pricing-section";
 import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
 import { Footer } from "@/components/footer";
 import { LiquidEther } from "@/components/ui/liquid-ether";
+import { createClient } from "@/utils/supabase/server";
 
-export default function Page() {
+export default async function Page() {
+  const supabase = await createClient();
+  const { data: { session } } = await supabase.auth.getSession();
+  const isAuthenticated = !!session;
+
   return (
     <main id="top" className="bg-surface min-h-screen relative">
-      <Navbar />
+      <Navbar isAuthenticated={isAuthenticated} />
       {/* ── Global Liquid Ether Background ── */}
       <div className="fixed inset-0 z-0 opacity-60 mix-blend-screen pointer-events-none">
         <LiquidEther
@@ -27,8 +33,9 @@ export default function Page() {
       <div className="relative z-10">
         <HeroSection />
         <HowItWorks />
-        <PatternShowcase />
+        <PatternShowcase isAuthenticated={isAuthenticated} />
         <UnderTheHood />
+        <PricingSection />
         <QuoteSection />
         <AboutSection />
         <Footer />
