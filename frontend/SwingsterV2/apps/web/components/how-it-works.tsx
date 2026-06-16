@@ -114,8 +114,8 @@ const cards = [
         ];
         let i = 0;
         const interval = setInterval(() => {
-          setStatus(statuses[i].text);
-          setColor(statuses[i].col);
+          setStatus(statuses[i]!.text);
+          setColor(statuses[i]!.col);
           i = (i + 1) % statuses.length;
         }, 1500);
         return () => clearInterval(interval);

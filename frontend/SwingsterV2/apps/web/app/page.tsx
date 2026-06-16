@@ -8,7 +8,7 @@ import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
 import { Footer } from "@/components/footer";
 import { LiquidEther } from "@/components/ui/liquid-ether";
-import { createClient } from "@/utils/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function Page() {
   const supabase = await createClient();
