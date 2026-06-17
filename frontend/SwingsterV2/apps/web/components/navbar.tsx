@@ -8,10 +8,10 @@ export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean 
   const navLinks = [
     // Features section does not exist yet, commented out for now.
     // { name: "Features", href: "#features" },
-    { name: "Home", href: "#top" },
-    { name: "How It Works", href: "#how-it-works" },
-    ...(isAuthenticated ? [{ name: "Patterns", href: "#patterns" }] : []),
-    { name: "About", href: "#about" },
+    { name: "Home", href: "/" },
+    { name: "How It Works", href: "/#how-it-works" },
+    ...(isAuthenticated ? [{ name: "My Watchlist", href: "/watchlist" }] : [{ name: "Watchlist", href: "/#watchlist" }]),
+    { name: "About", href: "/#about" },
   ];
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeSection, setActiveSection] = useState("");
@@ -78,19 +78,31 @@ export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean 
   }, [activeSection]);
 
   const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
     setIsMobileMenuOpen(false);
     
     if (href === "#top") {
+      e.preventDefault();
       window.scrollTo({ top: 0, behavior: "smooth" });
       return;
     }
-    
-    const id = href.substring(1);
-    const element = document.getElementById(id);
-    if (element) {
-      // Account for navbar height in scroll margin
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
+
+    // For full-path links (not hash-only), let the browser navigate normally
+    // unless it's a same-page hash link like "/#section"
+    if (href.startsWith("/") && !href.includes("#")) {
+      // Full route navigation — don't prevent default
+      return;
+    }
+
+    // Handle hash links (e.g., "#how-it-works" or "/#watchlist")
+    const hashIndex = href.indexOf("#");
+    if (hashIndex !== -1) {
+      const id = href.substring(hashIndex + 1);
+      const element = document.getElementById(id);
+      if (element) {
+        e.preventDefault();
+        element.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
     }
   };
 

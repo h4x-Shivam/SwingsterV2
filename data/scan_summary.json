@@ -1,9 +1,7 @@
 {
   "mode": "VCP",
   "total_scanned": 2181,
-  "pattern_match_count": 29,
-  "rejected_by_rr": [
-    "SUZLON"
-  ],
-  "timestamp": "2026-06-16T11:43:25.626650Z"
+  "pattern_match_count": 32,
+  "rejected_by_rr": [],
+  "timestamp": "2026-06-17T01:47:39.242579Z"
 }

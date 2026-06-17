@@ -33,8 +33,19 @@ const generateSparkline = (seedStr: string) => {
   return { path, volumeBars };
 };
 
-export function DataTable({ picks }: { picks: FinalPick[] }) {
+export function DataTable({ picks, initialWatchlist = [] }: { picks: FinalPick[], initialWatchlist?: string[] }) {
   const [expandedRowIndex, setExpandedRowIndex] = useState<number | null>(null);
+  const [watchlistSet, setWatchlistSet] = useState<Set<string>>(new Set(initialWatchlist));
+
+  const toggleWatchlistSymbol = (symbol: string) => {
+    const next = new Set(watchlistSet);
+    if (next.has(symbol)) {
+      next.delete(symbol);
+    } else {
+      next.add(symbol);
+    }
+    setWatchlistSet(next);
+  };
 
   if (picks.length === 0) {
     return (
@@ -135,10 +146,26 @@ export function DataTable({ picks }: { picks: FinalPick[] }) {
                 {/* Action */}
                 <div className="flex justify-center items-center">
                   <button 
-                    onClick={(e) => e.stopPropagation()}
-                    className="p-2 text-white/30 hover:text-emerald-400 transition-colors rounded-full hover:bg-emerald-500/10"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      // Optimistic toggle locally
+                      toggleWatchlistSymbol(pick.symbol);
+                      // Then call server action
+                      const { toggleWatchlist } = await import("@/app/actions/watchlist");
+                      try {
+                        await toggleWatchlist(pick.symbol);
+                      } catch (err) {
+                        // Revert if error
+                        toggleWatchlistSymbol(pick.symbol);
+                      }
+                    }}
+                    className={`p-2 transition-colors rounded-full ${
+                      watchlistSet.has(pick.symbol) 
+                        ? "text-emerald-400 bg-emerald-500/10" 
+                        : "text-white/30 hover:text-emerald-400 hover:bg-emerald-500/10"
+                    }`}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill={watchlistSet.has(pick.symbol) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
                     </svg>
                   </button>
@@ -154,7 +181,19 @@ export function DataTable({ picks }: { picks: FinalPick[] }) {
                     exit={{ opacity: 0, height: 0 }}
                     className="overflow-hidden bg-[#060608] border-b border-white/5"
                   >
-                    <ExpandedRow pick={pick} />
+                    <ExpandedRow 
+                      pick={pick} 
+                      isWatched={watchlistSet.has(pick.symbol)}
+                      onToggleWatchlist={async () => {
+                        toggleWatchlistSymbol(pick.symbol);
+                        const { toggleWatchlist } = await import("@/app/actions/watchlist");
+                        try {
+                          await toggleWatchlist(pick.symbol);
+                        } catch (err) {
+                          toggleWatchlistSymbol(pick.symbol);
+                        }
+                      }}
+                    />
                   </motion.div>
                 )}
               </AnimatePresence>

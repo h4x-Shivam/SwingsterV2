@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorks } from "@/components/how-it-works";
 import { PatternShowcase } from "@/components/pattern-showcase";
+import { WatchlistShowcase } from "@/components/watchlist-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
 import { PricingSection } from "@/components/pricing-section";
 import { QuoteSection } from "@/components/quote-section";
@@ -34,6 +35,7 @@ export default async function Page() {
         <HeroSection />
         <HowItWorks />
         <PatternShowcase isAuthenticated={isAuthenticated} />
+        <WatchlistShowcase isAuthenticated={isAuthenticated} />
         <UnderTheHood />
         <PricingSection />
         <QuoteSection />

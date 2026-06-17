@@ -11,7 +11,15 @@ function getScreenerSymbol(rawSymbol: string): string {
     .toUpperCase();
 }
 
-export function ExpandedRow({ pick }: { pick: FinalPick }) {
+export function ExpandedRow({ 
+  pick, 
+  isWatched = false, 
+  onToggleWatchlist 
+}: { 
+  pick: FinalPick;
+  isWatched?: boolean;
+  onToggleWatchlist?: () => void;
+}) {
 
   const scores = [
     { label: "Pattern Quality", value: pick.signal_strength, weight: "40%" },
@@ -167,9 +175,21 @@ export function ExpandedRow({ pick }: { pick: FinalPick }) {
               Open in TradingView
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
             </a>
-            <button className="flex items-center justify-center gap-2 w-full py-3 bg-transparent border border-white/10 hover:bg-white/5 text-white/80 font-semibold tracking-wide rounded-lg transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-              Add to Watchlist
+            <button 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onToggleWatchlist) onToggleWatchlist();
+              }}
+              className={`flex items-center justify-center gap-2 w-full py-3 border font-semibold tracking-wide rounded-lg transition-colors ${
+                isWatched 
+                  ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20" 
+                  : "bg-transparent border-white/10 hover:bg-white/5 text-white/80"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill={isWatched ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+              </svg>
+              {isWatched ? "Remove from Watchlist" : "Add to Watchlist"}
             </button>
           </div>
         </div>
