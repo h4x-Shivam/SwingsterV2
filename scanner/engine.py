@@ -131,17 +131,14 @@ def scan_symbol(
 
     # run detectors — only for active patterns
     best_signal = None
+    matched_pattern = None
     for pattern in active_patterns:
         sig = pattern.detect(candles, pivots)
         if sig and (best_signal is None or sig.strength > best_signal.strength):
             best_signal = sig
+            matched_pattern = pattern
 
     if best_signal is None or best_signal.strength < min_score:
-        return None
-
-    # get the matched pattern instance for scoring
-    matched_pattern = PATTERN_REGISTRY.get(best_signal.name)
-    if not matched_pattern:
         return None
 
     # 6. RS rank vs Nifty 50
