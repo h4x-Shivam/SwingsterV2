@@ -1,7 +1,11 @@
 {
   "mode": "VCP",
   "total_scanned": 2181,
-  "pattern_match_count": 32,
-  "rejected_by_rr": [],
-  "timestamp": "2026-06-17T01:47:39.242579Z"
+  "pattern_match_count": 39,
+  "rejected_by_rr": [
+    "ASTRAL",
+    "MUFIN",
+    "SEAMECLTD"
+  ],
+  "timestamp": "2026-06-18T09:57:19.862490Z"
 }
