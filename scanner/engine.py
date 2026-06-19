@@ -98,7 +98,7 @@ def scan_symbol(
     trend = analyze_trend(candles)
     
     STAGE2_MIN_SCORE_DICT = {
-        "VCP": 60,
+        "VCP": 0,
         "FLAG_POLE": 55,
         "CUP_HANDLE": 45,
         "BREAKOUT": 60

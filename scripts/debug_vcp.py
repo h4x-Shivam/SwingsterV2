@@ -196,5 +196,9 @@ def debug_vcp(symbol):
     print(f"{symbol}: PASS")
 
 if __name__ == "__main__":
-    for sym in ['LUMAXTECH', 'GVT&D', 'RELAXO', '360ONE', 'VTL']:
-        debug_vcp(sym)
+    if len(sys.argv) > 1:
+        for sym in sys.argv[1:]:
+            debug_vcp(sym)
+    else:
+        for sym in ['LUMAXTECH', 'GVT&D', 'RELAXO', '360ONE', 'VTL']:
+            debug_vcp(sym)
