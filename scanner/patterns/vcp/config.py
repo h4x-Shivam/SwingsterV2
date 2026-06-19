@@ -27,6 +27,6 @@ VCP_CONFIG = PatternConfig(
         "vol_dry_up_factor":     0.75,
         "near_pivot_max_pct":    0.05,
         "min_pullback_depth":    1.5,
-        "pivot_proximity_bottom": 0.94,
+        "pivot_proximity_bottom": 0.85,
     }
 )
