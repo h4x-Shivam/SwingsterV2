@@ -1,7 +1,10 @@
 {
   "mode": "VCP",
   "total_scanned": 2181,
-  "pattern_match_count": 42,
-  "rejected_by_rr": [],
-  "timestamp": "2026-06-18T11:39:23.744853Z"
+  "pattern_match_count": 36,
+  "rejected_by_rr": [
+    "GPTINFRA",
+    "ABCAPITAL"
+  ],
+  "timestamp": "2026-06-19T12:01:05.174681Z"
 }

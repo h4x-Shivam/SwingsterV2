@@ -140,7 +140,16 @@ class VCPPattern(BasePattern):
                 if recovery_pct < min_recovery_pct:
                     return None
 
-            # 6. Volume dry-up
+            # 6. Volume dry-up - Mandatory Minervini Criterion
+            # The right side of the base MUST see a contraction in volume.
+            # We compare the volume of the final trough to the volume of the first trough.
+            first_vol = best_run[0]["avg_vol"]
+            final_vol = best_run[-1]["avg_vol"]
+            
+            # If final volume is expanding significantly compared to the left side, reject.
+            if final_vol > first_vol * 1.1:
+                return None
+                
             vol_dry_up = True
             vol_dry_up_multiplier = self.config.extras.setdefault("vol_dry_up_multiplier", 1.2)
             for i in range(1, len(best_run)):
