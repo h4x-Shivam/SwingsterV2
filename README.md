@@ -1,0 +1,1 @@
+Chart Pattern Detection Engine
