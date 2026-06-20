@@ -14,8 +14,7 @@ def analyze_failures():
     detector = FlagPolePattern()
     
     cursor = conn.cursor()
-    cursor.execute("SELECT DISTINCT symbol FROM ohlcv")
-    symbols = [row[0] for row in cursor.fetchall()]
+    symbols = ["PAISALO", "ELGIEQUIP", "NRBBEARING", "TATACOMM"]
     
     reasons_count = {
         "pole_gain_low": 0,

@@ -88,7 +88,7 @@ class FlagPolePattern(BasePattern):
 
                     retracement = pole_high - flag_low
                     retrace_pct = (retracement / pole_gain * 100) if pole_gain > 0 else 999
-                    max_flag_retracement = self.config.extras.setdefault("max_flag_retracement", 35.0)
+                    max_flag_retracement = self.config.extras.setdefault("max_flag_retracement", 45.0)
                     if retrace_pct > max_flag_retracement:
                         continue
 
