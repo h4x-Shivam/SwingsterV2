@@ -1,7 +1,7 @@
 {
   "scan_mode": "FLAG_POLE",
-  "scan_time": "2026-06-20 18:49:43",
-  "total_picks": 17,
+  "scan_time": "2026-06-20 20:20:01",
+  "total_picks": 16,
   "results": [
     {
       "symbol": "CHOLAFIN",
@@ -21,7 +21,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "HIGH",
-      "judge_verdict": "The FLAG_POLE pattern in CHOLAFIN is compelling due to its recent flag formation and proximity to the buy point, with a strong signal strength and high relative strength score. The stock is near its resistance level, making it an attractive setup. The distance from the buy point is also within the ideal range.",
+      "judge_verdict": "The FLAG_POLE pattern in CHOLAFIN is compelling due to its recent formation and proximity to the buy point, with a strong signal strength and high relative strength score. The stock is near its resistance level, making it an attractive trade. The distance from the buy point is also within the ideal range.",
       "flags": "",
       "rank": 1
     },
@@ -43,7 +43,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "HIGH",
-      "judge_verdict": "Strong Flag Pole setup with high signal strength, tight flag, and clear resistance breakout. Volume score is slightly below ideal, but still respectable. Proximity to buy point is excellent.",
+      "judge_verdict": "Strong Flag Pole setup with high signal strength, tight stage 2 score, and excellent risk/reward ratio. Currently 0.08% above the buy point.",
       "flags": "",
       "rank": 2
     },
@@ -65,7 +65,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "HIGH",
-      "judge_verdict": "KERNEX shows a mature Flag pattern with a strong signal strength and high volume score. The setup is close to the buy point, with a distance of 6.93%.",
+      "judge_verdict": "Flag pattern with excellent signal strength, tight flag consolidation, and clear resistance breakout. The setup is mature, and the distance from buy point is ideal.",
       "flags": "",
       "rank": 3
     },
@@ -87,7 +87,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is only 70.3 and distance from buy point is 3.17%.",
+      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, distance from buy point is 3.17%, which is slightly above ideal.",
       "flags": "",
       "rank": 4
     },
@@ -109,7 +109,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Flag pole pattern with strong signal strength and rs score. However, volume score is only 68.4 and distance from buy point is -0.13%.",
+      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, distance from buy point is -0.13%, which is slightly below ideal.",
       "flags": "",
       "rank": 5
     },
@@ -131,7 +131,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is only 53.2 and distance from buy point is 2.41%.",
+      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is 53.2, which is below the preferred threshold.",
       "flags": "",
       "rank": 6
     },
@@ -153,7 +153,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is only 52.4 and distance from buy point is 1.38%.",
+      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, distance from buy point is 1.38%, which is slightly above ideal.",
       "flags": "",
       "rank": 7
     },
@@ -175,7 +175,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is only 48.7 and distance from buy point is 0.39%.",
+      "judge_verdict": "Flag pole pattern with strong signal strength and stage2 score. However, volume score is 48.7, which is below the preferred threshold.",
       "flags": "",
       "rank": 8
     },
@@ -197,7 +197,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "The FLAG_POLE pattern in MANAPPURAM is notable for its high relative strength score and strong signal strength, although the distance from the buy point is slightly above the ideal range. The setup is still actionable, but with moderate conviction due to the slight deviation from the ideal buy point distance.",
+      "judge_verdict": "The FLAG_POLE pattern in MANAPPURAM is notable for its high relative strength score and strong signal strength, although the distance from the buy point is slightly above the ideal range. The pattern is mature and the stock is near its resistance level, making it a decent trade. The volume score is moderate, which prevents it from being a high-conviction trade.",
       "flags": "",
       "rank": 9
     },
@@ -219,7 +219,7 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "The FLAG_POLE pattern in PAISALO is notable for its high relative strength score and strong signal strength, with a reasonable distance from the buy point. The setup is compelling, but the volume score is slightly lower than preferred, resulting in a moderate conviction level.",
+      "judge_verdict": "The FLAG_POLE pattern in PAISALO is notable for its high relative strength score and strong signal strength, with a decent risk-reward ratio. Although the volume score is moderate and the distance from the buy point is slightly above the ideal range, the pattern is mature and the stock is near its resistance level, making it a decent trade.",
       "flags": "",
       "rank": 10
     },
@@ -241,31 +241,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "The FLAG_POLE pattern in SHRIRAMFIN is attractive due to its high relative strength score and strong signal strength, with a reasonable distance from the buy point. The setup is compelling, but the volume score is slightly lower than preferred, resulting in a moderate conviction level.",
+      "judge_verdict": "The FLAG_POLE pattern in SHRIRAMFIN is appealing due to its high relative strength score and strong signal strength, with a decent volume score. The pattern is mature and the stock is near its resistance level, although the distance from the buy point is slightly above the ideal range. The risk-reward ratio is attractive, which supports the trade.",
       "flags": "",
       "rank": 11
-    },
-    {
-      "symbol": "RPEL",
-      "pattern": "FLAG_POLE",
-      "signal_strength": 98.0,
-      "volume_score": 47.4,
-      "rr_score": 70.0,
-      "stage2_score": 100.0,
-      "rs_score": 100.0,
-      "composite_score": 84.2,
-      "buy_point": 1231.03,
-      "stop_loss": 1140.58,
-      "target": 1469.98,
-      "rr_ratio": 2.64,
-      "current_price": 1197.949951171875,
-      "distance_from_buy_pct": 2.76,
-      "scan_mode": "FLAG_POLE",
-      "pledge_pct": null,
-      "conviction": "MEDIUM",
-      "judge_verdict": "Mature Flag Pole setup with good signal strength, tight flag, and clear resistance breakout. Volume score is decent, but not ideal. Proximity to buy point is a bit far.",
-      "flags": "",
-      "rank": 12
     },
     {
       "symbol": "AARTIIND",
@@ -285,9 +263,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "Strong Flag Pole setup with high signal strength, tight flag, and clear resistance breakout. Volume score is decent, but not ideal. Proximity to buy point is excellent.",
+      "judge_verdict": "Impressive Flag Pole setup with high signal strength, tight stage 2 score, and good risk/reward ratio. Currently 1.11% above the buy point.",
       "flags": "",
-      "rank": 13
+      "rank": 12
     },
     {
       "symbol": "ABDL",
@@ -307,9 +285,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "ABDL has a mature Flag pattern with a high signal strength and decent volume score. However, the setup is slightly above the buy point at 2.13%.",
+      "judge_verdict": "Flag pattern with strong signal strength, tight flag consolidation, and clear resistance breakout. However, the setup is not mature, and the distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 14
+      "rank": 13
     },
     {
       "symbol": "ELGIEQUIP",
@@ -329,9 +307,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "ELGIEQUIP shows a mature Flag pattern with a high signal strength and high volume score. The setup is close to the buy point, with a distance of 0.59%.",
+      "judge_verdict": "Flag pattern with strong signal strength, tight flag consolidation, and clear resistance breakout. However, the setup is not mature, and the distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 15
+      "rank": 14
     },
     {
       "symbol": "STAR",
@@ -351,9 +329,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "STAR has a mature Flag pattern with a high signal strength and decent volume score. However, the setup is slightly above the buy point at 1.47%.",
+      "judge_verdict": "Flag pattern with excellent signal strength, tight flag consolidation, and clear resistance breakout. However, the setup is not mature, and the distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 16
+      "rank": 15
     },
     {
       "symbol": "APOLLO",
@@ -373,9 +351,9 @@
       "scan_mode": "FLAG_POLE",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "APOLLO shows a mature Flag pattern with a high signal strength and decent volume score. The setup is close to the buy point, with a distance of 0.77%.",
+      "judge_verdict": "Flag pattern with strong signal strength, tight flag consolidation, and clear resistance breakout. However, the setup is not mature, and the distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 17
+      "rank": 16
     }
   ]
 }

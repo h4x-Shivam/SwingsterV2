@@ -33,7 +33,7 @@ class FlagPolePattern(BasePattern):
             buy_point_buffer = self.config.extras.setdefault("buy_point_buffer", 0.10)
 
             flag_end = len(candles) - 1
-            MAX_POLE_AGE_CANDLES = 30
+            MAX_POLE_AGE_CANDLES = 100
 
             vols = [c.volume for c in candles]
             vol_prefix = [0] * (len(vols) + 1)
@@ -111,7 +111,6 @@ class FlagPolePattern(BasePattern):
                     max_deviation = max(abs(flag_closes[i] - trendline_vals[i]) for i in range(len(flag_closes))) / b
                     max_allowed_deviation = self.config.extras.setdefault("max_channel_deviation", 0.035)
                     if max_deviation > max_allowed_deviation:
-                        if symbol in ["PAISALO", "ELGIEQUIP", "NRBBEARING", "TATACOMM"]: print(f"{symbol} fail max_deviation: {max_deviation} > {max_allowed_deviation}")
                         continue
 
                     # Calculate upper trendline using highs for accurate breakout level
@@ -129,7 +128,6 @@ class FlagPolePattern(BasePattern):
                     avg_flag_vol = get_avg_vol(flag_start, flag_end) if flag_end >= flag_start else 0
 
                     if avg_pole_vol > 0 and avg_flag_vol >= avg_pole_vol * vol_flag_factor:
-                        if symbol in ["PAISALO", "ELGIEQUIP", "NRBBEARING", "TATACOMM"]: print(f"{symbol} fail volume: flag {avg_flag_vol} vs pole {avg_pole_vol}")
                         continue
 
                     current_price = candles[-1].close

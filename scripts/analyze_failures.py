@@ -2,6 +2,7 @@ import sys
 import os
 import sqlite3
 import pandas as pd
+import numpy as np
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from fetcher.db_writer import read_ohlcv, get_connection
@@ -31,19 +32,19 @@ def analyze_failures():
     }
     
     min_pole_candles = 3
-    max_pole_candles = 12
-    min_pole_gain_pct = 12.0
-    max_pole_gain_pct = 50.0
-    min_pole_velocity = 2.0
+    max_pole_candles = 60
+    min_pole_gain_pct = 25.0
+    max_pole_gain_pct = 150.0
+    min_pole_velocity = 0.60
     min_flag_candles = 3
-    max_flag_candles = 20
+    max_flag_candles = 30
     flag_range_max_ratio = 0.40
-    flag_max_upward_slope = 0.003
+    flag_max_upward_slope = 0.015
     flag_min_downward_slope = -0.008
-    pole_high_candle_tolerance = 2
-    vol_flag_factor = 0.60
+    pole_high_candle_tolerance = 5
+    vol_flag_factor = 1.20
     max_flag_retracement = 35.0
-    MAX_POLE_AGE_CANDLES = 30
+    max_channel_deviation = 0.035
 
     for symbol in symbols:
         rows = read_ohlcv(symbol, conn=conn)
@@ -73,7 +74,6 @@ def analyze_failures():
             for pole_len in range(min_pole_candles, max_pole_candles + 1):
                 pole_start = flag_start - pole_len
                 if pole_start < 0: continue
-                if pole_start < (len(candles) - MAX_POLE_AGE_CANDLES): continue
 
                 pole_low = candles[pole_start].low
                 if pole_low <= 0: continue
@@ -122,19 +122,21 @@ def analyze_failures():
                     symbol_reason = "flag_range"
                     continue
 
-                mean_close = sum(flag_closes) / len(flag_closes)
-                max_deviation = max(abs(c - mean_close) for c in flag_closes) / mean_close
-                max_allowed_deviation = max(0.02, flag_range_max_ratio * pole_gain_pct / 200)
-                if max_deviation > max_allowed_deviation:
-                    symbol_reason = "flag_deviation"
-                    continue
-
-                flag_slope_pct = (flag_closes[-1] - flag_closes[0]) / flag_closes[0] / len(flag_closes)
+                x = np.arange(len(flag_closes))
+                m, b = np.polyfit(x, flag_closes, 1)
+                
+                flag_slope_pct = m / flag_closes[0]
                 if flag_slope_pct > flag_max_upward_slope:
                     symbol_reason = "flag_slope_up"
                     continue
                 if flag_slope_pct < flag_min_downward_slope:
                     symbol_reason = "flag_slope_down"
+                    continue
+
+                trendline_vals = m * x + b
+                max_deviation = max(abs(flag_closes[i] - trendline_vals[i]) for i in range(len(flag_closes))) / b
+                if max_deviation > max_channel_deviation:
+                    symbol_reason = "flag_deviation"
                     continue
 
                 avg_pole_vol = get_avg_vol(pole_start, pole_end) if pole_end >= pole_start else 1
