@@ -1,28 +1,7 @@
 {
-  "mode": "VCP",
+  "mode": "FLAG_POLE",
   "total_scanned": 2181,
-  "pattern_match_count": 766,
-  "rejected_by_rr": [
-    "AARTIIND",
-    "BLACKBUCK",
-    "GIPCL",
-    "LOTUSEYE",
-    "NRL",
-    "RELTD",
-    "TBZ",
-    "GPTINFRA",
-    "HINDWAREAP",
-    "JASH",
-    "PATELRMART",
-    "AAVAS",
-    "FORCEMOT",
-    "GREENLAM",
-    "QUESS",
-    "GAEL",
-    "VERANDA",
-    "ABCAPITAL",
-    "MRPL",
-    "PREMIERENE"
-  ],
-  "timestamp": "2026-06-20T07:59:34.682128Z"
+  "pattern_match_count": 88,
+  "rejected_by_rr": [],
+  "timestamp": "2026-06-20T12:59:21.076471Z"
 }
