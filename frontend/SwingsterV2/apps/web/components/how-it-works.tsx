@@ -4,6 +4,7 @@ import React, { useRef } from "react";
 import { motion, useInView } from "motion/react";
 import Link from "next/link";
 import CountUp from "react-countup";
+import ScrambledText from "./ScrambledText";
 
 const tickers = [
   "RELIANCE", "TCS", "HDFCBANK", "INFY", "SBIN", "ITC", "LT", "ICICIBANK", 
@@ -20,7 +21,9 @@ export function HowItWorks() {
   const isInView = useInView(containerRef, { once: true, margin: "-10%" });
 
   return (
-    <section id="how-it-works" className="relative w-full pt-24 md:pt-32 bg-[#0a0a0a] overflow-hidden text-white flex flex-col items-center">
+    <section id="how-it-works" className="relative w-full pt-24 md:pt-32 overflow-hidden text-white flex flex-col items-center bg-transparent">
+
+
       {/* Background Grid */}
       <div className="absolute inset-0 z-0 pointer-events-none opacity-50" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.04) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
       
@@ -86,7 +89,7 @@ export function HowItWorks() {
             
             <div className="relative w-full flex-1 flex flex-wrap content-start gap-2 md:gap-3 opacity-70">
                {tickers.map((ticker, i) => (
-                  <motion.span
+                  <motion.div
                     key={ticker}
                     initial={{ opacity: 0 }}
                     animate={isInView ? { opacity: 0.5 } : {}}
@@ -97,17 +100,21 @@ export function HowItWorks() {
                        animationDelay: `${i * 0.1}s`
                     }}
                   >
-                    {ticker}
-                  </motion.span>
+                    <ScrambledText radius={60} duration={1.2} speed={0.5} scrambleChars=".:/\" className="!m-0 !max-w-none !font-[inherit] !text-[inherit] [&>p]:!m-0">
+                      {ticker}
+                    </ScrambledText>
+                  </motion.div>
                ))}
-               <motion.span 
+               <motion.div 
                   initial={{ opacity: 0 }}
                   animate={isInView ? { opacity: 0.5 } : {}}
                   transition={{ duration: 0.5, delay: 1.2 + (tickers.length * 0.03) }}
                   className="text-[10px] md:text-xs font-mono text-emerald-500 mt-1 hidden md:inline-block w-full"
                >
-                 ...AND 2,817 MORE
-               </motion.span>
+                 <ScrambledText radius={100} duration={1.2} speed={0.5} scrambleChars=".:/\" className="!m-0 !max-w-none !font-[inherit] !text-[inherit] [&>p]:!m-0">
+                   ...AND 2,817 MORE
+                 </ScrambledText>
+               </motion.div>
             </div>
 
             {/* Subtle Right Chevron */}
@@ -343,31 +350,7 @@ export function HowItWorks() {
         </div>
       </div>
 
-      {/* Full-width Bottom Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={isInView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.8, delay: 3.8 }}
-        className="w-full bg-[#111113] border-t border-white/10 py-6 px-6 md:px-12 flex items-center z-20 relative"
-      >
-        <div className="w-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-           <div className="flex items-center gap-3 text-white/90 font-medium">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-500"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>
-              <span>Less Noise. <span className="text-emerald-400">More Opportunity.</span></span>
-           </div>
-           
-           <div className="text-white/40 text-sm text-center">
-              Clarity. Confidence. Edge. <span className="text-white/60">That's Swingster.</span>
-           </div>
-           
-           <Link 
-              href="/dashboard"
-              className="px-6 py-3 rounded-full border border-white/20 text-white text-sm font-bold hover:bg-emerald-500 hover:text-[#0a0a0a] hover:border-emerald-500 transition-all duration-300 flex items-center gap-2 group"
-           >
-              Explore Dashboard
-           </Link>
-        </div>
-      </motion.div>
+
 
       {/* Required CSS for floating animation */}
       <style dangerouslySetInnerHTML={{__html: `

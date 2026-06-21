@@ -26,6 +26,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "gsap": "^3.15.0",
     "react-countup": "^6.5.3"
   }
 }
