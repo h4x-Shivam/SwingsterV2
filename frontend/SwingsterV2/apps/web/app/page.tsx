@@ -4,7 +4,6 @@ import { HowItWorks } from "@/components/how-it-works";
 import { PatternShowcase } from "@/components/pattern-showcase";
 import { WatchlistShowcase } from "@/components/watchlist-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
-import { PricingSection } from "@/components/pricing-section";
 import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
 import { Footer } from "@/components/footer";
@@ -37,7 +36,6 @@ export default async function Page() {
         <PatternShowcase isAuthenticated={isAuthenticated} />
         <WatchlistShowcase isAuthenticated={isAuthenticated} />
         <UnderTheHood />
-        <PricingSection />
         <QuoteSection />
         <AboutSection />
         <Footer />

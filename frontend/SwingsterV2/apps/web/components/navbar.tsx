@@ -14,17 +14,31 @@ export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean 
     { name: "About", href: "/#about" },
   ];
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
   const [activeSection, setActiveSection] = useState("");
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navRefs = useRef<(HTMLAnchorElement | null)[]>([]);
 
-  // Handle scroll effects for the navbar background
+  // Handle scroll effects for the navbar background and visibility
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 80);
+      const currentScrollY = window.scrollY;
+      
+      setIsScrolled(currentScrollY > 80);
+      
+      // Hide if scrolling down and past the top area
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        setIsVisible(false);
+        setIsMobileMenuOpen(false); // Close mobile menu when hiding
+      } else {
+        setIsVisible(true);
+      }
+      
+      lastScrollY.current = currentScrollY;
     };
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -107,7 +121,11 @@ export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean 
   };
 
   return (
-    <header className="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 md:px-0 pointer-events-none">
+    <header 
+      className={`fixed top-4 left-0 right-0 z-50 flex justify-center px-4 md:px-0 pointer-events-none transition-all duration-300 ease-in-out ${
+        isVisible ? "translate-y-0 opacity-100" : "-translate-y-[150%] opacity-0"
+      }`}
+    >
       <div 
         className={`pointer-events-auto w-full max-w-[1100px] transition-all duration-300 ease-out border border-white/5 shadow-[0_0_24px_rgba(26,147,111,0.15)]
           ${isScrolled ? "bg-[#0f0f0f]/95" : "bg-[#0f0f0f]/80"}
