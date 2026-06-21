@@ -23,50 +23,72 @@ export const StickyScroll = ({
   const [activeCard, setActiveCard] = React.useState(0);
   const displayCard = activeCardOverride !== undefined && isScanning ? activeCardOverride : activeCard;
   const ref = useRef<HTMLDivElement>(null);
-  const { scrollYProgress } = useScroll({
+  const { scrollY } = useScroll({
     container: ref,
-    offset: ["start start", "end start"],
   });
-  const cardLength = content.length;
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  useMotionValueEvent(scrollYProgress, "change", (latest) => {
-    const cardsBreakpoints = content.map((_, index) => index / cardLength);
-    const closestBreakpointIndex = cardsBreakpoints.reduce(
-      (acc, breakpoint, index) => {
-        const distance = Math.abs(latest - breakpoint);
-        if (distance < Math.abs(latest - cardsBreakpoints[acc]!)) {
-          return index;
-        }
-        return acc;
-      },
-      0,
-    );
-    setActiveCard(closestBreakpointIndex);
+  if (itemRefs.current.length !== content.length) {
+    itemRefs.current = Array(content.length).fill(null);
+  }
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    if (!itemRefs.current.length) return;
+
+    let newIndex = 0;
+    for (let i = 0; i < content.length; i++) {
+      const el = itemRefs.current[i];
+      if (!el) continue;
+
+      // The total vertical space this item occupies before the next item
+      const patternHeight = el.offsetHeight + 128; // element height + mb-32 (8rem = 128px)
+      
+      // The exact pixel scroll offset where this item is perfectly aligned with the top of the right card (40px)
+      const alignmentOffset = el.offsetTop - 40;
+      
+      // The user requested to switch "when the user scroll 60% of the pattern"
+      const switchPoint = alignmentOffset + (patternHeight * 0.6);
+
+      if (latest >= switchPoint) {
+        newIndex = i + 1;
+      }
+    }
+
+    setActiveCard(Math.max(0, Math.min(content.length - 1, newIndex)));
   });
 
   return (
-    <motion.div
+    <div
       ref={ref}
-      layout
       className="sticky-scroll-container relative flex h-[40rem] justify-center space-x-10 overflow-y-auto p-10 w-full"
+      style={{
+        maskImage: "linear-gradient(to bottom, transparent 0px, transparent 10px, black 40px, black 100%)",
+        WebkitMaskImage: "linear-gradient(to bottom, transparent 0px, transparent 10px, black 40px, black 100%)"
+      }}
     >
-      <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="wait">
         {!isScanning && (
           <motion.div 
             key="text-content"
-            layout 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -50, filter: "blur(4px)" }}
             transition={{ duration: 0.5, ease: "easeInOut" }}
             className="div relative flex items-start px-4 origin-left"
           >
-            <div className="max-w-2xl min-w-[24rem] pt-8">
+            <div className="max-w-2xl min-w-[24rem] pt-10">
               {content.map((item, index) => (
-                <div key={item.title + index} className="mb-32 min-h-[10rem]">
+                <div 
+                  key={item.title + index} 
+                  ref={(el) => {
+                    itemRefs.current[index] = el;
+                  }}
+                  className="mb-32 min-h-[10rem]"
+                >
                   <motion.h2
                     initial={{ opacity: 0 }}
                     animate={{ opacity: activeCard === index ? 1 : 0.3 }}
+                    transition={{ duration: 0.4 }}
                     className="text-2xl font-bold text-slate-100"
                   >
                     {item.title}
@@ -74,6 +96,7 @@ export const StickyScroll = ({
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: activeCard === index ? 1 : 0.3 }}
+                    transition={{ duration: 0.4 }}
                     className="text-lg mt-6 max-w-sm text-slate-300 leading-relaxed"
                   >
                     {item.description}
@@ -85,9 +108,7 @@ export const StickyScroll = ({
           </motion.div>
         )}
 
-        <motion.div
-          layout
-          transition={{ duration: 0.5, ease: "easeInOut" }}
+        <div
           className={[
             "sticky top-10 hidden h-[32rem] w-[28rem] overflow-hidden rounded-md lg:block shrink-0 z-10",
             contentClassName ?? "",
@@ -95,13 +116,23 @@ export const StickyScroll = ({
             .filter(Boolean)
             .join(" ")}
         >
-          {content[displayCard]?.content ?? null}
-        </motion.div>
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={displayCard}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 1.05 }}
+              transition={{ duration: 0.4, ease: "easeInOut" }}
+              className="w-full h-full"
+            >
+              {content[displayCard]?.content ?? null}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
         {isScanning && (
           <motion.div
             key="progress-ui"
-            layout
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: 50, filter: "blur(4px)" }}
@@ -114,6 +145,6 @@ export const StickyScroll = ({
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 };
