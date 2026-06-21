@@ -8,6 +8,7 @@ import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
 import { Footer } from "@/components/footer";
 import { LiquidEther } from "@/components/ui/liquid-ether";
+import { SplashCursor } from "@/components/ui/splash-cursor";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function Page() {
@@ -20,6 +21,7 @@ export default async function Page() {
       <Navbar isAuthenticated={isAuthenticated} />
       {/* ── Global Liquid Ether Background ── */}
       <div className="fixed inset-0 z-0 opacity-60 mix-blend-screen pointer-events-none">
+        <SplashCursor COLOR="#10b981" RAINBOW_MODE={false} />
         <LiquidEther
           colors={['#10b981', '#10b981', '#ef4444']}
           mouseForce={30}
