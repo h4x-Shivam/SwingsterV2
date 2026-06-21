@@ -139,9 +139,6 @@ export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean 
             onClick={(e) => handleLinkClick(e, "#top")}
             className="flex items-center gap-2 group"
           >
-            <div className="w-8 h-8 rounded bg-emerald-500/20 border border-emerald-500/50 flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-400"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-            </div>
             <span className="font-bold text-lg tracking-tight text-white group-hover:text-emerald-400 transition-colors">
               Swingster
             </span>
