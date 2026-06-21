@@ -3,6 +3,8 @@
 import React from "react";
 import { SplitText } from "@/components/ui/split-text";
 
+import ScrambledText from "./ScrambledText";
+
 export function QuoteSection() {
   return (
     <section className="relative w-full min-h-[80vh] flex items-center justify-center bg-transparent py-20 px-4 overflow-hidden">
@@ -26,7 +28,7 @@ export function QuoteSection() {
           rootMargin="-20%"
         >
           The market rewards <br className="hidden md:block" />
-          those who <span className="text-[#10b981] drop-shadow-[0_0_30px_rgba(16,185,129,0.3)]">spot patterns</span> <br className="hidden md:block" />
+          those who <ScrambledText className="text-[#10b981] drop-shadow-[0_0_30px_rgba(16,185,129,0.3)]">spot patterns</ScrambledText> <br className="hidden md:block" />
           before the crowd.
         </SplitText>
       </div>

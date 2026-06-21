@@ -21,7 +21,7 @@ const ScrambledText = ({
   useEffect(() => {
     if (!rootRef.current) return;
 
-    const split = SplitText.create(rootRef.current.querySelector('p'), {
+    const split = SplitText.create(rootRef.current.querySelector('span'), {
       type: 'chars',
       charsClass: 'char'
     });
@@ -66,18 +66,19 @@ const ScrambledText = ({
   }, [radius, duration, speed, scrambleChars]);
 
   return (
-    <div ref={rootRef} className={`text-block ${className}`} style={style}>
-      <p>{children}</p>
+    <span ref={rootRef} className={`text-block ${className}`} style={style}>
+      <span>{children}</span>
       <style jsx>{`
         .text-block {
           font-family: inherit;
+          display: inline-block;
         }
         .text-block :global(.char) {
           will-change: transform;
           display: inline-block;
         }
       `}</style>
-    </div>
+    </span>
   );
 };
 
