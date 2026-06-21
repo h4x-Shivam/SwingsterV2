@@ -140,34 +140,24 @@ class FlagPolePattern(BasePattern):
 
                     strength = 50.0
 
-                    if pole_velocity >= 3.0:
-                        strength += 25
-                    elif pole_velocity >= 2.0:
-                        strength += 15
-                    elif pole_velocity >= 1.5:
-                        strength += 8
-                    elif pole_velocity >= 1.0:
-                        strength += 0
+                    # Velocity bonus (explosive momentum)
+                    if pole_velocity >= 3.0: strength += 25
+                    elif pole_velocity >= 2.0: strength += 15
+                    elif pole_velocity >= 1.5: strength += 8
+                    elif pole_velocity >= 1.0: strength += 0
 
-                    if pole_len <= 4:
-                        strength += 15
-                    elif pole_len <= 6:
-                        strength += 10
-                    elif pole_len <= 8:
-                        strength += 5
+                    if pole_len <= 4: strength += 15
+                    elif pole_len <= 8: strength += 10
+                    elif pole_len <= 15: strength += 5
 
                     flag_to_pole_ratio = flag_range_pct / pole_gain_pct
-                    if flag_to_pole_ratio < 0.20:
-                        strength += 10
-                    elif flag_to_pole_ratio < 0.30:
-                        strength += 5
+                    if flag_to_pole_ratio < 0.20: strength += 10
+                    elif flag_to_pole_ratio < 0.30: strength += 5
 
-                    if -0.003 <= flag_slope_pct <= 0.000:
-                        strength += 8
-                    elif flag_slope_pct < -0.003:
-                        strength += 3
+                    if -0.003 <= flag_slope_pct <= 0.000: strength += 8
+                    elif flag_slope_pct < -0.003: strength += 3
 
-                    strength = min(strength, 100.0)
+                    strength = min(100.0, strength)
 
                     if best_signal is None or strength > best_signal.strength:
                         best_signal = PatternSignal(
