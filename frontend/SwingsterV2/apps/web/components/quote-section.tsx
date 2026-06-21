@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion } from "motion/react";
+import { SplitText } from "@/components/ui/split-text";
 
 export function QuoteSection() {
   return (
@@ -13,17 +13,22 @@ export function QuoteSection() {
       </div>
 
       <div className="relative z-10 max-w-6xl mx-auto text-center">
-        <motion.h2 
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-20%" }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
+        <SplitText 
+          tag="h2"
           className="text-5xl md:text-7xl lg:text-[100px] font-bold tracking-tighter text-white/90 leading-[1.05]"
+          delay={50}
+          duration={0.8}
+          ease="power3.out"
+          splitType="words"
+          from={{ opacity: 0, y: 30 }}
+          to={{ opacity: 1, y: 0 }}
+          threshold={0.1}
+          rootMargin="-20%"
         >
           The market rewards <br className="hidden md:block" />
           those who <span className="text-[#10b981] drop-shadow-[0_0_30px_rgba(16,185,129,0.3)]">spot patterns</span> <br className="hidden md:block" />
           before the crowd.
-        </motion.h2>
+        </SplitText>
       </div>
     </section>
   );
