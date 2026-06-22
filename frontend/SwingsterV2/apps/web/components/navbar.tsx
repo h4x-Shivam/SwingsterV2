@@ -6,11 +6,11 @@ import { motion } from "motion/react";
 
 export function Navbar({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const navLinks = [
-    // Features section does not exist yet, commented out for now.
-    // { name: "Features", href: "#features" },
     { name: "Home", href: "/" },
     { name: "How It Works", href: "/#how-it-works" },
-    ...(isAuthenticated ? [{ name: "My Watchlist", href: "/watchlist" }] : [{ name: "Watchlist", href: "/#watchlist" }]),
+    { name: "How to Scan", href: "/#how-to-scan" },
+    { name: "Pattern", href: "/#patterns" },
+    ...(isAuthenticated ? [{ name: "My Watchlist", href: "/watchlist" }] : []),
     { name: "About", href: "/#about" },
   ];
   const [isScrolled, setIsScrolled] = useState(false);

@@ -46,8 +46,8 @@ export function HowItWorksSteps() {
   return (
     <section 
       ref={containerRef}
-      className="relative w-full py-24 md:py-32 overflow-hidden"
-      style={{ backgroundColor: "#0A0E0D" }}
+      id="how-to-scan"
+      className="relative w-full py-24 md:py-32 overflow-hidden bg-transparent"
     >
       <div className="max-w-[1600px] mx-auto px-4 md:px-8">
         
@@ -365,19 +365,7 @@ export function HowItWorksSteps() {
 
         </div>
 
-        {/* ── 4. Footer Disclaimer Bar ── */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5, delay: 0.8 }}
-          className="mt-12 md:mt-16 mx-auto inline-flex items-center gap-2 px-7 py-3.5 rounded-full"
-          style={{ backgroundColor: "#0F1512", border: "1px solid rgba(255,255,255,0.05)" }}
-        >
-           <ShieldCheck size={16} color="#2DD4BF" />
-           <span className="text-[13px] md:text-[14px]" style={{ color: "#9CA3AF" }}>
-             Designed to help you find high-probability setups and make informed trading decisions.
-           </span>
-        </motion.div>
+
         
       </div>
     </section>
