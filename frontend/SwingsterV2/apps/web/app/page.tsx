@@ -7,7 +7,7 @@ import { WatchlistShowcase } from "@/components/watchlist-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
 import { QuoteSection } from "@/components/quote-section";
 import { AboutSection } from "@/components/about-section";
-import { Footer } from "@/components/footer";
+
 import { LiquidEther } from "@/components/ui/liquid-ether";
 import { SplashCursor } from "@/components/ui/splash-cursor";
 import { createClient } from "@/lib/supabase/server";
@@ -42,7 +42,7 @@ export default async function Page() {
         <UnderTheHood />
         <QuoteSection />
         <AboutSection />
-        <Footer />
+
       </div>
     </main>
   );
