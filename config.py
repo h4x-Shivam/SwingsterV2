@@ -13,14 +13,16 @@ load_dotenv()
 
 
 # ---------------------------------------------------------------------------
-# Project Paths
+# Project Paths & Database
 # ---------------------------------------------------------------------------
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 DATA_DIR = os.path.join(PROJECT_ROOT, "data")
 
 SYMBOLS_CSV = os.path.join(DATA_DIR, "symbols.csv")
+# SQLite path kept for legacy reasons if needed, but we now use PostgreSQL
 DB_PATH = os.path.join(DATA_DIR, "ohlcv.db")
+DATABASE_URL = os.getenv("DATABASE_URL")
 RESULTS_JSON = os.path.join(DATA_DIR, "results.json")
 
 # ---------------------------------------------------------------------------

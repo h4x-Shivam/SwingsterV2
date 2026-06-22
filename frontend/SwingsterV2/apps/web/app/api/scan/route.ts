@@ -1,7 +1,4 @@
 import { NextRequest } from "next/server";
-import { spawn } from "child_process";
-import fs from "fs";
-import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -9,62 +6,23 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const mode = searchParams.get("mode") || "VCP";
 
-  // Determine the root of the SwingsterV2 backend
-  // Assuming Next.js runs from frontend/SwingsterV2/apps/web
-  const backendRoot = path.resolve(process.cwd(), "../../../../");
-  
-  // Prioritize the local virtual environment Python executable
-  const venvPythonPath = path.join(backendRoot, ".venv", "Scripts", "python.exe");
-  const pythonExecutable = fs.existsSync(venvPythonPath) ? venvPythonPath : "python";
-
-  // Create a stream to send Server-Sent Events (SSE) to the frontend
-  const stream = new TransformStream();
-  const writer = stream.writable.getWriter();
-  const encoder = new TextEncoder();
-
-  // Helper to write SSE formatted data
-  const send = (msg: string) => {
-    writer.write(encoder.encode(`data: ${JSON.stringify(msg)}\n\n`));
-  };
+  // Use an environment variable for the Python API URL, fallback to local FastAPI default
+  const apiUrl = process.env.NEXT_PUBLIC_PYTHON_API_URL || "http://127.0.0.1:8000";
 
   try {
-    const child = spawn(pythonExecutable, ["main.py", "--mode", mode], {
-      cwd: backendRoot,
-      env: {
-        ...process.env,
-        PYTHONUNBUFFERED: "1", // Force Python to flush stdout immediately
+    const response = await fetch(`${apiUrl}/scan?mode=${mode}`, {
+      method: "GET",
+      headers: {
+        "Accept": "text/event-stream",
       },
     });
 
-    child.stdout.on("data", (data: Buffer) => {
-      const lines = data.toString().split("\n");
-      for (const line of lines) {
-        if (line.trim()) {
-          send(line.trim());
-        }
-      }
-    });
+    if (!response.ok) {
+      throw new Error(`Python API returned status: ${response.status}`);
+    }
 
-    child.stderr.on("data", (data: Buffer) => {
-      const lines = data.toString().split("\n");
-      for (const line of lines) {
-        if (line.trim()) {
-          send(`[WARN] ${line.trim()}`);
-        }
-      }
-    });
-
-    child.on("close", (code) => {
-      send(`[SYSTEM] Process exited with code ${code}`);
-      writer.close();
-    });
-
-    child.on("error", (error) => {
-      send(`[SYSTEM_ERROR] Failed to start scan engine: ${error.message}`);
-      writer.close();
-    });
-
-    return new Response(stream.readable, {
+    // Proxy the readable stream directly to the client
+    return new Response(response.body, {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
@@ -72,8 +30,13 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    send(`[SYSTEM_ERROR] Server Exception: ${error.message}`);
+    // If the backend is down, we send a fallback SSE message
+    const stream = new TransformStream();
+    const writer = stream.writable.getWriter();
+    const encoder = new TextEncoder();
+    writer.write(encoder.encode(`data: ${JSON.stringify(`[SYSTEM_ERROR] Failed to connect to Python backend: ${error.message}`)}\n\n`));
     writer.close();
+
     return new Response(stream.readable, {
       headers: {
         "Content-Type": "text/event-stream",

@@ -39,24 +39,30 @@ if __name__ == "__main__":
     
     candidates_dict = [vars(c) for c in candidates]
     
-    # Save full candidates to data/results.json for judge agent
-    os.makedirs("data", exist_ok=True)
-    with open("data/results.json", "w") as f:
-        json.dump(candidates_dict, f, indent=2)
-    print(f"\nFull {len(candidates)} candidates saved -> data/results.json")
-    
+    # We are no longer saving full candidates to JSON for judge agent.
+    # The judge agent gets them directly in memory.
     import datetime
-    summary_data = {
-        "mode": args.mode,
-        "total_scanned": total_scanned,
-        "pattern_match_count": count_pattern,
-        "rejected_by_rr": rejected_rr_list,
-        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
-    }
-    with open("data/scan_summary.json", "w") as f:
-        json.dump(summary_data, f, indent=2)
-    print(f"Dynamic metrics saved -> data/scan_summary.json")
+    from fetcher.db_writer import get_connection
+    import psycopg2.extras
     
+    conn = get_connection()
+    try:
+        with conn.cursor() as cursor:
+            # Insert scan summary and get ID
+            cursor.execute("""
+                INSERT INTO scan_summary (mode, total_scanned, pattern_match_count, rejected_by_rr)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id;
+            """, (args.mode, total_scanned, count_pattern, rejected_rr_list))
+            scan_summary_id = cursor.fetchone()[0]
+        conn.commit()
+        print(f"Dynamic metrics saved to Supabase (Scan Summary ID: {scan_summary_id})")
+    except Exception as e:
+        print(f"Failed to save scan summary to Supabase: {e}")
+        scan_summary_id = None
+        if conn:
+            conn.rollback()
+
     sys.stdout.flush()
     
     try:
@@ -78,26 +84,75 @@ if __name__ == "__main__":
     sys.stdout.flush()
     final_picks = run_judge(candidates_dict, mode=args.mode)
             
-    save_final_picks(final_picks, mode=args.mode)
+    if scan_summary_id is not None and final_picks:
+        try:
+            with conn.cursor() as cursor:
+                insert_query = """
+                INSERT INTO final_picks (
+                    scan_summary_id, rank, symbol, pattern, scan_mode, composite_score, 
+                    conviction, buy_point, stop_loss, target, rr_ratio, current_price, 
+                    distance_from_buy_pct, signal_strength, volume_score, rr_score, 
+                    stage2_score, rs_score, judge_verdict, flags, pledge_pct, sector, 
+                    target2, pattern_age, trend
+                ) VALUES %s
+                """
+                # Prepare rows
+                rows = []
+                for p in final_picks:
+                    rows.append((
+                        scan_summary_id,
+                        p.get('rank', 0),
+                        p.get('symbol', ''),
+                        p.get('pattern', ''),
+                        p.get('scan_mode', args.mode),
+                        p.get('composite_score', 0.0),
+                        p.get('conviction', 'MEDIUM'),
+                        p.get('buy_point', 0.0),
+                        p.get('stop_loss', 0.0),
+                        p.get('target', 0.0),
+                        p.get('rr_ratio', 0.0),
+                        p.get('current_price', 0.0),
+                        p.get('distance_from_buy_pct', 0.0),
+                        p.get('signal_strength', 0.0),
+                        p.get('volume_score', 0.0),
+                        p.get('rr_score', 0.0),
+                        p.get('stage2_score', 0.0),
+                        p.get('rs_score', 0.0),
+                        p.get('judge_verdict', ''),
+                        p.get('flags', ''),
+                        p.get('pledge_pct', None),
+                        p.get('sector', None),
+                        p.get('target2', None),
+                        p.get('pattern_age', None),
+                        p.get('trend', None)
+                    ))
+                psycopg2.extras.execute_values(cursor, insert_query, rows)
+            conn.commit()
+            print(f"Final {len(final_picks)} picks saved to Supabase -> final_picks table.")
+        except Exception as e:
+            print(f"Failed to save final picks to Supabase: {e}")
+            conn.rollback()
     
+    if conn:
+        conn.close()
+
     # Print judge results
     print(f"\n{'-' * 55}")
     print(f"  FINAL PICKS - {args.mode} SETUPS")
     print(f"{'-' * 55}")
     for r in final_picks:
-        print(f"\n  #{r['rank']}  {r['symbol']:<12} "
-              f"[{r['pattern'].upper():<12}] "
-              f"Score: {r['composite_score']:.1f}  "
-              f"Conviction: {r['conviction']}")
-        print(f"      Buy:  Rs {r['buy_point']:.2f}  "
-              f"Stop: Rs {r['stop_loss']:.2f}  "
-              f"Target: Rs {r['target']:.2f}  "
-              f"R:R {r['rr_ratio']:.1f}x")
-        print(f"      {r['judge_verdict']}")
-        if r['flags']:
-            print(f"      WARNING: {r['flags']}")
+        print(f"\n  #{r.get('rank')}  {r.get('symbol'):<12} "
+              f"[{r.get('pattern', '').upper():<12}] "
+              f"Score: {r.get('composite_score', 0):.1f}  "
+              f"Conviction: {r.get('conviction')}")
+        print(f"      Buy:  Rs {r.get('buy_point', 0):.2f}  "
+              f"Stop: Rs {r.get('stop_loss', 0):.2f}  "
+              f"Target: Rs {r.get('target', 0):.2f}  "
+              f"R:R {r.get('rr_ratio', 0):.1f}x")
+        print(f"      {r.get('judge_verdict')}")
+        if r.get('flags'):
+            print(f"      WARNING: {r.get('flags')}")
     print(f"\n{'-' * 55}")
-    print(f"Full results -> data/final_picks.json")
     sys.stdout.flush()
 
 

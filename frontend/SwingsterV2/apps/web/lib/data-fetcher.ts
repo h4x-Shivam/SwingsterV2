@@ -1,10 +1,4 @@
-import fs from "fs";
-import path from "path";
-
-// Define the root of the data folder.
-// Assuming this Next.js app is at: d:\SwingsterV2\frontend\SwingsterV2\apps\web
-// The data folder is at: d:\SwingsterV2\data
-const DATA_DIR = path.resolve(process.cwd(), "../../../../data");
+import { createClient } from "@/lib/supabase/server";
 
 export interface ScanSummary {
   mode: string;
@@ -35,7 +29,6 @@ export interface FinalPick {
   judge_verdict: string;
   flags: string;
   pledge_pct?: number | null;
-  // Optional fields not yet emitted by the scanner
   sector?: string;
   target2?: number;
   pattern_age?: number;
@@ -44,25 +37,54 @@ export interface FinalPick {
 
 export async function getScanSummary(): Promise<ScanSummary | null> {
   try {
-    const filePath = path.join(DATA_DIR, "scan_summary.json");
-    if (!fs.existsSync(filePath)) return null;
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(fileContents);
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("scan_summary")
+      .select("*")
+      .order("timestamp", { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (error || !data) {
+      console.error("Failed to read scan_summary from Supabase:", error?.message);
+      return null;
+    }
+    return data as ScanSummary;
   } catch (error) {
-    console.error("Failed to read scan_summary.json", error);
+    console.error("Failed to read scan_summary", error);
     return null;
   }
 }
 
 export async function getFinalPicks(): Promise<FinalPick[]> {
   try {
-    const filePath = path.join(DATA_DIR, "final_picks.json");
-    if (!fs.existsSync(filePath)) return [];
-    const fileContents = fs.readFileSync(filePath, "utf8");
-    const data = JSON.parse(fileContents);
-    return data.results || [];
+    const supabase = await createClient();
+    // First get the latest scan_summary id
+    const { data: summary, error: summaryError } = await supabase
+      .from("scan_summary")
+      .select("id")
+      .order("timestamp", { ascending: false })
+      .limit(1)
+      .single();
+      
+    if (summaryError || !summary) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("final_picks")
+      .select("*")
+      .eq("scan_summary_id", summary.id)
+      .order("rank", { ascending: true });
+
+    if (error) {
+      console.error("Failed to read final_picks from Supabase:", error.message);
+      return [];
+    }
+    
+    return (data || []) as FinalPick[];
   } catch (error) {
-    console.error("Failed to read final_picks.json", error);
+    console.error("Failed to read final_picks", error);
     return [];
   }
 }
