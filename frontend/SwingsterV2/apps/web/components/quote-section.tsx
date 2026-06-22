@@ -26,6 +26,8 @@ export function QuoteSection() {
           to={{ opacity: 1, y: 0 }}
           threshold={0.1}
           rootMargin="-20%"
+          text=""
+          onLetterAnimationComplete={() => {}}
         >
           The market rewards <br className="hidden md:block" />
           those who <ScrambledText className="text-[#10b981] drop-shadow-[0_0_30px_rgba(16,185,129,0.3)]">spot patterns</ScrambledText> <br className="hidden md:block" />

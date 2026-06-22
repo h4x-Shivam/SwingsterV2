@@ -30,7 +30,7 @@ export function HowItWorksSteps() {
   const containerRef = useRef(null);
   const isInView = useInView(containerRef, { once: true, margin: "-100px 0px" });
 
-  const cardVariants = {
+  const cardVariants: any = {
     hidden: { opacity: 0, y: 30 },
     visible: (i: number) => ({
       opacity: 1,
