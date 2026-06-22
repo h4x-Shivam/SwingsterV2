@@ -1,130 +1,173 @@
 "use client";
 
-import React from "react";
-import { motion } from "motion/react";
+import React, { useRef } from "react";
+import { motion, useInView } from "motion/react";
+import { Database, TrendingUp, Layers, ShieldCheck } from "lucide-react";
 import { BorderGlow } from "@/components/ui/border-glow";
 
 const stages = [
   {
+    num: "01",
+    icon: <Database className="w-5 h-5 text-emerald-400" />,
     title: "Data Ingestion",
-    subtitle: "2,000+ NSE Tickers",
-    description: "Fetches live OHLCV price action, volume profiles, and real-time fundamental data directly from the National Stock Exchange.",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-    ),
-    color: "from-blue-500 to-cyan-400",
-    shadow: "shadow-[0_0_30px_rgba(56,189,248,0.2)]"
+    body: "Live OHLCV price data, volume profiles, and market breadth pulled directly from yfinance.",
+    stat: "· 2,000+ NSE symbols processed",
+    align: "left",
   },
   {
-    title: "Trend Confirmation",
-    subtitle: "Minervini Stage 2 Filter",
-    description: "Harshly rejects any stock not in a confirmed, long-term institutional uptrend. We only trade assets with the wind at their back.",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"></polyline><polyline points="16 7 22 7 22 13"></polyline></svg>
-    ),
-    color: "from-emerald-400 to-green-500",
-    shadow: "shadow-[0_0_30px_rgba(16,185,129,0.2)]"
+    num: "02",
+    icon: <TrendingUp className="w-5 h-5 text-emerald-400" />,
+    title: "Multi-stage Filtering Funnel",
+    body: "Eliminated: majority of market tickers based on predefined criteria.",
+    stat: "· ~70% of tickers eliminated",
+    align: "right",
   },
   {
-    title: "Quantitative Geometry",
-    subtitle: "Algorithmic Pattern Engine",
-    description: "Calculates precise moving average compressions, volatility contraction layers (VCP), and volume dry-up signatures to pinpoint exact breakout pivots.",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-    ),
-    color: "from-purple-500 to-indigo-500",
-    shadow: "shadow-[0_0_30px_rgba(168,85,247,0.2)]"
+    num: "03",
+    icon: <Layers className="w-5 h-5 text-emerald-400" />,
+    title: "Pattern Detection",
+    body: "Mathematical detection of VCP, Cup & Handle, Flag & Pole. Multiple pattern algorithms running.",
+    stat: "· Custom pattern engine active",
+    align: "left",
   },
   {
-    title: "Qualitative Verdict",
-    subtitle: "The Groq AI Judge",
-    description: "A specialized AI agent acts as your co-pilot, evaluating Risk:Reward ratios, reading context, filtering false positives, and assigning a final High/Medium Conviction score.",
-    icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-    ),
-    color: "from-rose-500 to-red-500",
-    shadow: "shadow-[0_0_30px_rgba(244,63,94,0.2)]"
-  }
+    num: "04",
+    icon: <ShieldCheck className="w-5 h-5 text-emerald-400" />,
+    title: "AI Judge",
+    body: "Specialized LLM agent reviews setups. Prioritizes best opportunities for dashboard delivery.",
+    stat: "· Best setups surfaced",
+    align: "right",
+  },
 ];
 
 export function UnderTheHood() {
+  const containerRef = useRef(null);
+  const isInView = useInView(containerRef, { once: true, margin: "-100px 0px" });
+
+  const headingText = "Under the Hood of Institutional Edge".split(" ");
+
   return (
-    <section id="how-it-works" className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden scroll-mt-24">
-      {/* Background glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-emerald-500/5 rounded-full blur-[100px] pointer-events-none" />
+    <section ref={containerRef} id="under-the-hood" className="relative w-full py-24 md:py-32 bg-transparent overflow-hidden">
+      {/* Background Radial Gradient */}
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: "radial-gradient(ellipse 60% 50% at 15% 20%, rgba(26, 147, 111, 0.18) 0%, transparent 70%)"
+        }}
+      />
+      
+
 
       <div className="relative z-10 max-w-5xl mx-auto px-6">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-white/40"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-            <span className="text-xs font-medium text-white/60 tracking-widest uppercase">
-              The Engine
+        
+        {/* Header */}
+        <div className="flex flex-col items-center text-center mb-20 md:mb-28">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={isInView ? { opacity: 1, scale: 1 } : {}}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 mb-6"
+          >
+            <span className="text-sm">⚙</span>
+            <span className="text-xs font-medium text-emerald-400 tracking-widest uppercase">
+              THE ENGINE
             </span>
-          </div>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-tight">
-            Under the hood of <br/>
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-white/40">Institutional Edge</span>
+          </motion.div>
+
+          <h2 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight flex flex-wrap justify-center gap-[0.25em]">
+            {headingText.map((word, i) => (
+              <motion.span
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                animate={isInView ? { opacity: 1, y: 0 } : {}}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+                className="whitespace-nowrap"
+              >
+                {word}
+              </motion.span>
+            ))}
           </h2>
         </div>
 
-        <div className="relative">
-          {/* Vertical Line */}
-          <div className="absolute left-[31px] md:left-1/2 top-0 bottom-0 w-[2px] bg-gradient-to-b from-transparent via-white/10 to-transparent transform md:-translate-x-1/2" />
+        {/* Timeline Layout */}
+        <div className="relative w-full max-w-4xl mx-auto">
+          
+          {/* Vertical Dotted Line */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={isInView ? { opacity: 1 } : {}}
+            transition={{ duration: 0.8 }}
+            className="absolute left-6 md:left-1/2 top-0 bottom-16 w-[2px] border-l-[2px] border-dotted border-emerald-500 md:-translate-x-1/2 z-0"
+          />
 
-          <div className="flex flex-col gap-12 md:gap-24">
-            {stages.map((stage, index) => {
-              const isEven = index % 2 === 0;
+          {/* Timeline Nodes & Cards */}
+          <div className="relative z-10 flex flex-col gap-12 md:gap-20">
+            {stages.map((stage, idx) => {
+              const isLeft = stage.align === "left";
+              
               return (
-                <div key={index} className="relative flex flex-col md:flex-row items-center w-full">
+                <div key={idx} className={`relative flex w-full md:items-center ${isLeft ? "md:justify-start" : "md:justify-end"}`}>
                   
-                  {/* Timeline Dot */}
-                  <div className="absolute left-[32px] md:left-1/2 transform -translate-x-1/2 w-4 h-4 rounded-full bg-[#060608] border-[3px] border-emerald-500 z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-
-                  {/* Desktop Content (Alternating sides) */}
-                  <motion.div 
-                    initial={{ opacity: 0, x: isEven ? -50 : 50 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    viewport={{ once: true, margin: "-10%" }}
-                    transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
-                    className={`w-full md:w-1/2 pl-20 md:px-12 flex ${isEven ? "md:justify-end md:text-right" : "md:justify-start md:order-last"}`}
-                  >
-                    <BorderGlow
-                      className="w-full max-w-sm"
-                      innerClassName="p-6 md:p-8 bg-[#121216]/80 backdrop-blur-xl border border-white/5 hover:border-white/10 transition-colors w-full h-full text-left rounded-2xl"
-                      edgeSensitivity={30}
-                      glowColor={
-                        index === 0 ? "56 189 248" :
-                        index === 1 ? "16 185 129" :
-                        index === 2 ? "168 85 247" :
-                        "244 63 94"
-                      }
-                      backgroundColor="#121216"
-                      borderRadius={16}
-                      glowRadius={40}
-                      glowIntensity={0.6}
-                      coneSpread={20}
-                      animated={true}
-                      fillOpacity={0.05}
+                  {/* Node Circle */}
+                  <div className="absolute top-0 md:top-1/2 left-6 md:left-1/2 transform -translate-x-1/2 md:-translate-y-1/2 w-9 h-9 md:w-10 md:h-10 rounded-full bg-[#0a0a0c] border-2 border-emerald-500 flex items-center justify-center z-20">
+                    <motion.span 
+                      initial={{ opacity: 0 }}
+                      animate={isInView ? { opacity: 1 } : {}}
+                      transition={{ duration: 0.3, delay: idx * 0.12 }}
+                      className="text-white text-xs md:text-sm font-mono font-bold"
                     >
-                      <div className={`inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br ${stage.color} text-white mb-6 ${isEven ? "md:float-right md:ml-6" : "mb-6"}`}>
-                        {stage.icon}
-                      </div>
-                      <div className="clear-both" />
-                      <h3 className="text-xl font-bold text-white mb-3">
-                        {stage.title}
-                      </h3>
-                      <p className="text-sm text-white/60 leading-relaxed">
-                        {stage.description}
-                      </p>
-                    </BorderGlow>
-                  </motion.div>
+                      {stage.num}
+                    </motion.span>
+                  </div>
 
-                  {/* Empty space for alternating layout */}
-                  <div className={`hidden md:block w-1/2 ${isEven ? "order-last" : ""}`} />
+                  {/* Horizontal Connector Line (Mobile) */}
+                  <div className="md:hidden absolute top-[18px] left-6 w-8 border-t-[2px] border-dotted border-emerald-500 z-0" />
+
+                  {/* Horizontal Connector Line (Desktop) */}
+                  <div className={`hidden md:block absolute top-1/2 transform -translate-y-1/2 w-8 lg:w-12 border-t-[2px] border-dotted border-emerald-500 z-0 ${isLeft ? "right-[50%]" : "left-[50%]"}`} />
+
+                  {/* Card Container */}
+                  <div className={`w-full pl-16 md:pl-0 md:w-1/2 flex ${isLeft ? "md:justify-end md:pr-8 lg:pr-12" : "md:justify-start md:pl-8 lg:pl-12"}`}>
+                    <motion.div
+                      initial={{ opacity: 0, x: isLeft ? -20 : 20 }}
+                      animate={isInView ? { opacity: 1, x: 0 } : {}}
+                      transition={{ duration: 0.4, delay: idx * 0.12, ease: "easeOut" }}
+                      className="w-full max-w-[420px] transition-transform hover:-translate-y-1"
+                    >
+                      <BorderGlow
+                        className="w-full shadow-[0_4px_30px_rgba(0,0,0,0.1)]"
+                        innerClassName="p-6 bg-[#121215]/80 backdrop-blur-md flex flex-col gap-2 h-full"
+                        edgeSensitivity={30}
+                        glowColor="160 84 39"
+                        backgroundColor="#121215"
+                        borderRadius={16}
+                        glowRadius={30}
+                        glowIntensity={1.0}
+                        coneSpread={25}
+                        animated={false}
+                        colors={['#34d399', '#10b981', '#059669']}
+                        fillOpacity={0.05}
+                      >
+                        <div className="flex items-center gap-2 mb-1">
+                          {stage.icon}
+                          <h3 className="text-white font-semibold text-lg">{stage.title}</h3>
+                        </div>
+                        <p className="text-white/60 text-sm leading-relaxed mb-1">
+                          {stage.body}
+                        </p>
+                        <div className="pt-3 mt-1 border-t border-white/[0.04]">
+                          <span className="text-xs font-mono text-emerald-400/80">{stage.stat}</span>
+                        </div>
+                      </BorderGlow>
+                    </motion.div>
+                  </div>
+
                 </div>
-              );
+              )
             })}
           </div>
+
+
         </div>
       </div>
     </section>
