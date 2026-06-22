@@ -117,10 +117,6 @@ export function HowItWorks() {
                </motion.div>
             </div>
 
-            {/* Subtle Right Chevron */}
-            <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 text-white/10 pr-2 -mr-6">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
-            </div>
           </div>
 
           {/* Column 2: FILTER RUTHLESSLY */}
@@ -143,77 +139,135 @@ export function HowItWorks() {
             </motion.h3>
 
             <div className="relative w-full max-w-[280px] mx-auto flex-1 flex flex-col items-center h-[380px]">
-               {/* Funnel SVG Background */}
-               <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ filter: "drop-shadow(0 0 8px rgba(26,147,111,0.6))" }} preserveAspectRatio="none" viewBox="0 0 200 400">
-                  <motion.polygon 
-                    points="0,0 200,0 130,380 70,380"
-                    fill="rgba(10,10,10,0.8)"
+               {/* Detailed Funnel SVG Background */}
+               <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ filter: "drop-shadow(0 0 12px rgba(16,185,129,0.3))" }} viewBox="0 0 280 380">
+                 <defs>
+                   <linearGradient id="funnelFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(16,185,129,0.02)" />
+                      <stop offset="50%" stopColor="rgba(16,185,129,0.08)" />
+                      <stop offset="100%" stopColor="rgba(16,185,129,0.3)" />
+                   </linearGradient>
+                   <linearGradient id="glowBottom" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="rgba(16,185,129,0.5)" />
+                      <stop offset="100%" stopColor="rgba(16,185,129,0)" />
+                   </linearGradient>
+                 </defs>
+
+                 {/* Bottom Glow Vertical Drop */}
+                 <motion.path 
+                   d="M80,340 L200,340 L170,380 L110,380 Z"
+                   fill="url(#glowBottom)"
+                   initial={{ opacity: 0 }}
+                   animate={isInView ? { opacity: 1 } : {}}
+                   transition={{ duration: 1, delay: 2.5 }}
+                 />
+
+                 {/* Main Funnel Fill */}
+                 <motion.path 
+                    d="M0,0 L280,0 L200,340 L80,340 Z"
+                    fill="url(#funnelFill)"
+                    initial={{ opacity: 0 }}
+                    animate={isInView ? { opacity: 1 } : {}}
+                    transition={{ duration: 1.5, delay: 1.4 }}
+                 />
+
+                 {/* Funnel Outline */}
+                 <motion.path 
+                    d="M0,0 L280,0 L200,340 L80,340 Z"
+                    fill="none"
                     stroke="#10b981"
                     strokeWidth="1.5"
                     initial={{ pathLength: 0, opacity: 0 }}
                     animate={isInView ? { pathLength: 1, opacity: 1 } : {}}
                     transition={{ duration: 1.5, delay: 1.4, ease: "easeInOut" }}
-                  />
+                 />
+
+                 {/* Divider 1 */}
+                 <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.0 }}>
+                    <line x1="22.5" y1="95" x2="257.5" y2="95" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="140" cy="95" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M135,93 L140,98 L145,93" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                 </motion.g>
+
+                 {/* Divider 2 */}
+                 <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.2 }}>
+                    <line x1="43.5" y1="185" x2="236.5" y2="185" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="140" cy="185" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M135,183 L140,188 L145,183" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                 </motion.g>
+
+                 {/* Divider 3 */}
+                 <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.4 }}>
+                    <line x1="62.5" y1="265" x2="217.5" y2="265" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="140" cy="265" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M135,263 L140,268 L145,263" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                 </motion.g>
+
+                 {/* Base platform ellipse (Glow) */}
+                 <motion.ellipse
+                    cx="140" cy="340" rx="60" ry="12"
+                    fill="#10b981"
+                    style={{ filter: "blur(8px)" }}
+                    initial={{ opacity: 0 }}
+                    animate={isInView ? { opacity: 0.6 } : {}}
+                    transition={{ duration: 1, delay: 2.5 }}
+                 />
+                 {/* Base platform ellipse (Solid) */}
+                 <motion.ellipse
+                    cx="140" cy="340" rx="60" ry="8"
+                    fill="rgba(16,185,129,0.2)"
+                    stroke="#10b981"
+                    strokeWidth="2"
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={isInView ? { opacity: 1, scale: 1 } : {}}
+                    transition={{ duration: 1, delay: 2.5 }}
+                 />
                </svg>
                
-               {/* Funnel Content Layer */}
-               <div className="relative z-10 w-full h-full flex flex-col items-center justify-between py-6">
+               {/* HTML Overlays for Text */}
+               <div className="absolute inset-0 w-full h-full flex flex-col items-center pointer-events-none z-10">
                  
-                 <div className="flex flex-col items-center">
-                   <div className="text-2xl font-mono font-bold text-white">
+                 {/* Layer 1: 0 - 95 */}
+                 <div className="absolute top-0 w-full h-[95px] flex flex-col items-center justify-center">
+                   <div className="text-2xl md:text-3xl font-mono font-bold text-white">
                      {isInView ? <CountUp end={2847} duration={1} delay={1.8} separator="," useEasing /> : "0"}
                    </div>
                    <div className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Stocks Scanned</div>
                  </div>
 
-                 {/* Arrow 1 */}
-                 <svg width="12" height="24" viewBox="0 0 12 24" fill="none">
-                    <motion.path d="M6,0 L6,22 M2,18 L6,22 L10,18" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                      initial={{ pathLength: 0, opacity: 0 }} animate={isInView ? { pathLength: 1, opacity: 1 } : {}} transition={{ duration: 0.4, delay: 2.6 }} />
-                 </svg>
-
-                 <div className="flex flex-col items-center">
-                   <div className="text-xl font-mono font-bold text-white/90">
+                 {/* Layer 2: 95 - 185 */}
+                 <div className="absolute top-[95px] w-full h-[90px] flex flex-col items-center justify-center">
+                   <div className="text-xl md:text-2xl font-mono font-bold text-white/90">
                      {isInView ? <CountUp end={312} duration={1} delay={2.2} separator="," useEasing /> : "0"}
                    </div>
                    <div className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Potential Patterns</div>
                  </div>
 
-                 {/* Arrow 2 */}
-                 <svg width="12" height="24" viewBox="0 0 12 24" fill="none">
-                    <motion.path d="M6,0 L6,22 M2,18 L6,22 L10,18" stroke="rgba(255,255,255,0.2)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                      initial={{ pathLength: 0, opacity: 0 }} animate={isInView ? { pathLength: 1, opacity: 1 } : {}} transition={{ duration: 0.4, delay: 3.0 }} />
-                 </svg>
-
-                 <div className="flex flex-col items-center">
-                   <div className="text-lg font-mono font-bold text-white/80">
+                 {/* Layer 3: 185 - 265 */}
+                 <div className="absolute top-[185px] w-full h-[80px] flex flex-col items-center justify-center">
+                   <div className="text-lg md:text-xl font-mono font-bold text-white/80">
                      {isInView ? <CountUp end={47} duration={1} delay={2.6} separator="," useEasing /> : "0"}
                    </div>
                    <div className="text-[10px] text-white/50 uppercase tracking-wider mt-1">Valid Patterns</div>
                  </div>
 
-                 {/* Arrow 3 (Green) */}
-                 <svg width="12" height="24" viewBox="0 0 12 24" fill="none">
-                    <motion.path d="M6,0 L6,22 M2,18 L6,22 L10,18" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                      initial={{ pathLength: 0, opacity: 0 }} animate={isInView ? { pathLength: 1, opacity: 1 } : {}} transition={{ duration: 0.4, delay: 3.4 }} />
-                 </svg>
-
-                 <div className="flex flex-col items-center pb-2">
+                 {/* Layer 4: 265 - 340 */}
+                 <div className="absolute top-[265px] w-full h-[75px] flex flex-col items-center justify-center pb-2">
                    <motion.div 
                      initial={{ scale: 0.8, textShadow: "none" }}
                      animate={isInView ? { scale: 1, textShadow: "0 0 20px rgba(16,185,129,0.8)" } : {}}
                      transition={{ duration: 0.5, delay: 3.8 }}
-                     className="text-4xl font-mono font-black text-emerald-400"
+                     className="text-3xl md:text-4xl font-mono font-black text-emerald-400"
                    >
                      {isInView ? <CountUp end={10} duration={1} delay={3.0} useEasing /> : "0"}
                    </motion.div>
-                   <div className="text-[10px] text-emerald-400/80 uppercase tracking-widest font-bold mt-2">High-Conviction Setups</div>
+                   <div className="text-[10px] text-emerald-400/80 uppercase tracking-widest font-bold mt-1">High-Conviction Setups</div>
                  </div>
-                 
+
                </div>
 
                {/* Particle Emission */}
-               <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-[40px] h-[40px]">
+               <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-[40px] h-[40px] pointer-events-none z-0">
                   {[...Array(4)].map((_, i) => (
                      <motion.div
                        key={i}
@@ -226,9 +280,40 @@ export function HowItWorks() {
                </div>
             </div>
 
-            {/* Subtle Right Chevron */}
-            <div className="hidden md:flex absolute right-0 top-1/2 -translate-y-1/2 text-white/10 pr-2 -mr-6">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            {/* Left Connector (Desktop) */}
+            <div className="hidden lg:flex absolute -left-20 xl:-left-24 top-[55%] -translate-y-1/2 items-center z-30 pointer-events-none">
+               <motion.svg 
+                  initial={{ opacity: 0 }} animate={isInView ? { opacity: 0.6 } : {}} transition={{ duration: 1, delay: 3 }}
+                  width="80" height="120" viewBox="0 0 80 120" style={{ filter: "drop-shadow(0 0 4px rgba(16,185,129,0.5))" }}>
+                  <path d="M0,20 C40,20 60,60 80,60" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="2 4" opacity="0.3" />
+                  <path d="M0,40 C40,40 60,60 80,60" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 4" opacity="0.6" />
+                  <path d="M0,60 C40,60 60,60 80,60" fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="2 4" opacity="1" />
+                  <path d="M0,80 C40,80 60,60 80,60" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 4" opacity="0.6" />
+                  <path d="M0,100 C40,100 60,60 80,60" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="2 4" opacity="0.3" />
+               </motion.svg>
+               <motion.div 
+                  initial={{ scale: 0 }} animate={isInView ? { scale: 1 } : {}} transition={{ duration: 0.5, delay: 3.2, type: "spring" }}
+                  className="w-8 h-8 rounded-full border border-emerald-500/50 bg-black/80 flex items-center justify-center backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.4)] z-10 -ml-4">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+               </motion.div>
+            </div>
+
+            {/* Right Connector (Desktop) */}
+            <div className="hidden lg:flex absolute -right-20 xl:-right-24 top-[55%] -translate-y-1/2 items-center z-30 pointer-events-none">
+               <motion.div 
+                  initial={{ scale: 0 }} animate={isInView ? { scale: 1 } : {}} transition={{ duration: 0.5, delay: 3.4, type: "spring" }}
+                  className="w-8 h-8 rounded-full border border-emerald-500/50 bg-black/80 flex items-center justify-center backdrop-blur-md shadow-[0_0_15px_rgba(16,185,129,0.4)] z-10 -mr-4">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+               </motion.div>
+               <motion.svg 
+                  initial={{ opacity: 0 }} animate={isInView ? { opacity: 0.6 } : {}} transition={{ duration: 1, delay: 3.6 }}
+                  width="80" height="120" viewBox="0 0 80 120" style={{ filter: "drop-shadow(0 0 4px rgba(16,185,129,0.5))" }}>
+                  <path d="M0,60 C20,60 40,20 80,20" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="2 4" opacity="0.3" />
+                  <path d="M0,60 C20,60 40,40 80,40" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 4" opacity="0.6" />
+                  <path d="M0,60 C20,60 40,60 80,60" fill="none" stroke="#10b981" strokeWidth="2" strokeDasharray="2 4" opacity="1" />
+                  <path d="M0,60 C20,60 40,80 80,80" fill="none" stroke="#10b981" strokeWidth="1.5" strokeDasharray="2 4" opacity="0.6" />
+                  <path d="M0,60 C20,60 40,100 80,100" fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="2 4" opacity="0.3" />
+               </motion.svg>
             </div>
           </div>
 

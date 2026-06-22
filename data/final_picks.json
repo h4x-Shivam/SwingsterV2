@@ -1,30 +1,8 @@
 {
   "scan_mode": "VCP",
-  "scan_time": "2026-06-21 10:56:24",
-  "total_picks": 20,
+  "scan_time": "2026-06-22 01:10:53",
+  "total_picks": 18,
   "results": [
-    {
-      "symbol": "BHARATGEAR",
-      "pattern": "VCP",
-      "signal_strength": 98.0503306289215,
-      "volume_score": 100.0,
-      "rr_score": 0.0,
-      "stage2_score": 80.0,
-      "rs_score": 100.0,
-      "composite_score": 91.8,
-      "buy_point": 138.0,
-      "stop_loss": 107.92,
-      "target": 154.2,
-      "rr_ratio": 0.59,
-      "current_price": 137.0500030517578,
-      "distance_from_buy_pct": 0.69,
-      "scan_mode": "VCP",
-      "pledge_pct": null,
-      "conviction": "HIGH",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. The setup is mature with 3 contractions and is close to the buy point.",
-      "flags": "",
-      "rank": 1
-    },
     {
       "symbol": "INDSWFTLAB",
       "pattern": "VCP",
@@ -43,31 +21,31 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "HIGH",
-      "judge_verdict": "VCP pattern with high signal strength and tight price action preparing for a breakout. Strong stage2 score and high volume score.",
+      "judge_verdict": "This VCP setup is compelling due to its high signal strength and perfect stage 2 score, with a proximity to the buy point of 1.67%. The volume score of 100.0 also indicates strong conviction.",
       "flags": "",
-      "rank": 2
+      "rank": 1
     },
     {
-      "symbol": "BHEL",
+      "symbol": "RBLBANK",
       "pattern": "VCP",
-      "signal_strength": 87.72776082079213,
-      "volume_score": 97.7,
-      "rr_score": 0.0,
+      "signal_strength": 86.61121681080311,
+      "volume_score": 100.0,
+      "rr_score": 20.0,
       "stage2_score": 100.0,
       "rs_score": 100.0,
-      "composite_score": 87.2,
-      "buy_point": 423.7,
-      "stop_loss": 363.92,
-      "target": 417.8,
-      "rr_ratio": 0.07,
-      "current_price": 414.3500061035156,
-      "distance_from_buy_pct": 2.26,
+      "composite_score": 88.0,
+      "buy_point": 379.9,
+      "stop_loss": 315.27,
+      "target": 435.68,
+      "rr_ratio": 0.89,
+      "current_price": 378.8500061035156,
+      "distance_from_buy_pct": 0.28,
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "HIGH",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. Proximity to buy point is ideal at 2.26%.",
+      "judge_verdict": "This VCP setup stands out with its high signal strength, perfect stage 2 score, and excellent volume score of 100.0. The current price is very close to the buy point, making it an attractive opportunity.",
       "flags": "",
-      "rank": 3
+      "rank": 2
     },
     {
       "symbol": "KIRLPNU",
@@ -87,7 +65,29 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, the risk/reward ratio is only 0.64, which is below our preference.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score, but relatively low rr_ratio. Currently 1.9% above buy point.",
+      "flags": "",
+      "rank": 3
+    },
+    {
+      "symbol": "BHARATGEAR",
+      "pattern": "VCP",
+      "signal_strength": 98.0503306289215,
+      "volume_score": 100.0,
+      "rr_score": 0.0,
+      "stage2_score": 80.0,
+      "rs_score": 100.0,
+      "composite_score": 91.8,
+      "buy_point": 138.0,
+      "stop_loss": 107.92,
+      "target": 154.2,
+      "rr_ratio": 0.59,
+      "current_price": 137.0500030517578,
+      "distance_from_buy_pct": 0.69,
+      "scan_mode": "VCP",
+      "pledge_pct": null,
+      "conviction": "MEDIUM",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score, but relatively low rr_ratio. Currently 0.69% above buy point.",
       "flags": "",
       "rank": 4
     },
@@ -109,7 +109,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, the risk/reward ratio is only 0.4, which is below our preference.",
+      "judge_verdict": "VCP pattern with strong signal strength, but low rr_ratio and rs_score. Currently 1.47% above buy point.",
       "flags": "",
       "rank": 5
     },
@@ -131,7 +131,7 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, the risk/reward ratio is only 0.12, which is below our preference.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score, but relatively low rr_ratio. Currently 1.85% above buy point.",
       "flags": "",
       "rank": 6
     },
@@ -153,75 +153,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, the risk/reward ratio is only 0.2, which is below our preference.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score, but relatively low rr_ratio. Currently 1.88% above buy point.",
       "flags": "",
       "rank": 7
-    },
-    {
-      "symbol": "RAINBOW",
-      "pattern": "VCP",
-      "signal_strength": 99.41265143977188,
-      "volume_score": 97.2,
-      "rr_score": 0.0,
-      "stage2_score": 60.0,
-      "rs_score": 76.5,
-      "composite_score": 88.9,
-      "buy_point": 1495.0,
-      "stop_loss": 1300.37,
-      "target": 1533.4,
-      "rr_ratio": 0.37,
-      "current_price": 1470.800048828125,
-      "distance_from_buy_pct": 1.65,
-      "scan_mode": "VCP",
-      "pledge_pct": null,
-      "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with high signal strength and good stage2 score. However, relatively low rr ratio and distance from buy point.",
-      "flags": "",
-      "rank": 8
-    },
-    {
-      "symbol": "RBLBANK",
-      "pattern": "VCP",
-      "signal_strength": 86.61121681080311,
-      "volume_score": 100.0,
-      "rr_score": 20.0,
-      "stage2_score": 100.0,
-      "rs_score": 100.0,
-      "composite_score": 88.0,
-      "buy_point": 379.9,
-      "stop_loss": 315.27,
-      "target": 435.68,
-      "rr_ratio": 0.89,
-      "current_price": 378.8500061035156,
-      "distance_from_buy_pct": 0.28,
-      "scan_mode": "VCP",
-      "pledge_pct": null,
-      "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with high signal strength and tight price action. However, relatively low rr ratio and distance from buy point.",
-      "flags": "",
-      "rank": 9
-    },
-    {
-      "symbol": "BERGEPAINT",
-      "pattern": "VCP",
-      "signal_strength": 98.58486891918461,
-      "volume_score": 100.0,
-      "rr_score": 0.0,
-      "stage2_score": 60.0,
-      "rs_score": 51.8,
-      "composite_score": 87.7,
-      "buy_point": 559.7,
-      "stop_loss": 476.24,
-      "target": 553.15,
-      "rr_ratio": 0.03,
-      "current_price": 550.7000122070312,
-      "distance_from_buy_pct": 1.63,
-      "scan_mode": "VCP",
-      "pledge_pct": null,
-      "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with high signal strength and good stage2 score. However, relatively low rr ratio and distance from buy point.",
-      "flags": "",
-      "rank": 10
     },
     {
       "symbol": "CAPLIPOINT",
@@ -241,9 +175,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with high signal strength and good stage2 score. However, relatively low rr ratio and distance from buy point.",
+      "judge_verdict": "This VCP setup has a strong signal strength and a good volume score of 89.6. Although the stage 2 score is 80, which is acceptable, the distance from the buy point is 2.26%, which is slightly above the ideal range.",
       "flags": "",
-      "rank": 11
+      "rank": 8
     },
     {
       "symbol": "SURYODAY",
@@ -263,9 +197,31 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, distance from buy point is 8.96%, which is slightly above ideal.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 12
+      "rank": 9
+    },
+    {
+      "symbol": "BHEL",
+      "pattern": "VCP",
+      "signal_strength": 87.72776082079213,
+      "volume_score": 97.7,
+      "rr_score": 0.0,
+      "stage2_score": 100.0,
+      "rs_score": 100.0,
+      "composite_score": 87.2,
+      "buy_point": 423.7,
+      "stop_loss": 363.92,
+      "target": 417.8,
+      "rr_ratio": 0.07,
+      "current_price": 414.3500061035156,
+      "distance_from_buy_pct": 2.26,
+      "scan_mode": "VCP",
+      "pledge_pct": null,
+      "conviction": "MEDIUM",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, distance from buy point is slightly above ideal.",
+      "flags": "",
+      "rank": 10
     },
     {
       "symbol": "ITI",
@@ -285,9 +241,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, stage2 score is only 60, which is not ideal.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, stage2 score is only 60 and rs score is relatively low.",
       "flags": "",
-      "rank": 13
+      "rank": 11
     },
     {
       "symbol": "ZIMLAB",
@@ -307,9 +263,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. Proximity to buy point is ideal at 0.19%.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, distance from buy point is very close to ideal.",
       "flags": "",
-      "rank": 14
+      "rank": 12
     },
     {
       "symbol": "GOKULAGRO",
@@ -329,9 +285,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, rr ratio is only 3.81, which is not ideal.",
+      "judge_verdict": "VCP pattern with strong signal strength and volume score. However, rr ratio is relatively low and stage2 score is only 100.",
       "flags": "",
-      "rank": 15
+      "rank": 13
     },
     {
       "symbol": "TIMKEN",
@@ -351,9 +307,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and decent risk/reward. However, distance from buy point is 2.05%, which is slightly above ideal.",
+      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and decent risk/reward. However, distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 16
+      "rank": 14
     },
     {
       "symbol": "BHAGYANGR",
@@ -373,9 +329,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and excellent risk/reward. However, distance from buy point is 2.1%, which is slightly above ideal.",
+      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and good risk/reward. However, distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 17
+      "rank": 15
     },
     {
       "symbol": "ARVINDFASN",
@@ -397,7 +353,7 @@
       "conviction": "MEDIUM",
       "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and decent risk/reward. However, stage2 score is only 60, which is a concern.",
       "flags": "",
-      "rank": 18
+      "rank": 16
     },
     {
       "symbol": "GRINDWELL",
@@ -417,9 +373,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and excellent risk/reward. However, distance from buy point is 0.62%, which is below ideal.",
+      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and excellent risk/reward. However, distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 19
+      "rank": 17
     },
     {
       "symbol": "FLUOROCHEM",
@@ -439,9 +395,9 @@
       "scan_mode": "VCP",
       "pledge_pct": null,
       "conviction": "MEDIUM",
-      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and decent risk/reward. However, distance from buy point is 2.1%, which is slightly above ideal.",
+      "judge_verdict": "VCP pattern with 3 contractions, strong signal strength, and decent risk/reward. However, distance from buy point is slightly above ideal.",
       "flags": "",
-      "rank": 20
+      "rank": 18
     }
   ]
 }
