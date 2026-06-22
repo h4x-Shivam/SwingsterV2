@@ -24,13 +24,21 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
   const supabase = await createClient()
+  
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
   const data = {
     email: formData.get('email') as string,
     password: formData.get('password') as string,
   }
 
-  const { error } = await supabase.auth.signUp(data)
+  const { error } = await supabase.auth.signUp({
+    email: data.email,
+    password: data.password,
+    options: {
+      emailRedirectTo: `${siteUrl}/auth/callback`,
+    }
+  })
 
   if (error) {
     redirect('/login?error=Could not authenticate user')
