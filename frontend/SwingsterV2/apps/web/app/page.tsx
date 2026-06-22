@@ -1,6 +1,7 @@
 import { Navbar } from "@/components/navbar";
 import { HeroSection } from "@/components/hero-section";
 import { HowItWorks } from "@/components/how-it-works";
+import { HowItWorksSteps } from "@/components/how-it-works-steps";
 import { PatternShowcase } from "@/components/pattern-showcase";
 import { WatchlistShowcase } from "@/components/watchlist-showcase";
 import { UnderTheHood } from "@/components/under-the-hood";
@@ -35,6 +36,7 @@ export default async function Page() {
       <div className="relative z-10">
         <HeroSection />
         <HowItWorks />
+        <HowItWorksSteps />
         <PatternShowcase isAuthenticated={isAuthenticated} />
         <WatchlistShowcase isAuthenticated={isAuthenticated} />
         <UnderTheHood />

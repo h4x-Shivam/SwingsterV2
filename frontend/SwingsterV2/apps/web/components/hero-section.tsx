@@ -36,7 +36,7 @@ export function HeroSection() {
             {/* ── Headline ── */}
             <h1 className="text-center">
               <span className="block text-base md:text-lg text-text-muted font-medium opacity-0 animate-fade-in-up animation-delay-100">
-                Unleash the power of
+                Your Edge in the Market
               </span>
               <span className="block text-5xl md:text-[6rem] font-bold text-text-primary leading-none mt-2 opacity-0 animate-fade-in-up animation-delay-200">
                 SwingsterV2
