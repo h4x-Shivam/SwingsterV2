@@ -27,6 +27,7 @@ export function AboutSection() {
                 colors="#10b981,#059669,#047857" 
                 gap={6} 
                 speed={40} 
+                noFocus={true}
                 className="w-full h-full"
               >
                 <div className="absolute inset-0 z-[-1]">
