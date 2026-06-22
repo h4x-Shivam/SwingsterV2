@@ -2,8 +2,8 @@
 
 import React from "react";
 import { motion } from "motion/react";
-import { BorderGlow } from "@/components/ui/border-glow";
 import PixelCard from "./PixelCard";
+import SpotlightCard from "./SpotlightCard";
 
 export function AboutSection() {
   return (
@@ -16,20 +16,12 @@ export function AboutSection() {
           viewport={{ once: true, margin: "-10%" }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <BorderGlow
-            className="w-full"
-            innerClassName="p-6 md:p-10 bg-[#0c0c10]/80 backdrop-blur-xl border border-white/5 hover:border-white/10 transition-colors w-full rounded-2xl flex !flex-col md:!flex-row gap-8 md:gap-12"
-            edgeSensitivity={30}
-            glowColor="16 185 129"
-            backgroundColor="#0c0c10"
-            borderRadius={16}
-            glowRadius={40}
-            glowIntensity={0.5}
-            coneSpread={20}
-            animated={true}
-            fillOpacity={0.03}
+          <SpotlightCard 
+            className="custom-spotlight-card w-full" 
+            spotlightColor="rgba(16, 185, 129, 0.2)"
           >
-            {/* Left: Pixel Card Image */}
+            <div className="flex flex-col md:flex-row gap-8 md:gap-12 w-full">
+              {/* Left: Pixel Card Image */}
             <div className="w-full md:w-[280px] shrink-0 h-[350px] md:h-[420px] rounded-xl overflow-hidden relative border border-white/5 group">
               <PixelCard 
                 colors="#10b981,#059669,#047857" 
@@ -104,7 +96,8 @@ export function AboutSection() {
                 </div>
               </div>
             </div>
-          </BorderGlow>
+          </div>
+        </SpotlightCard>
         </motion.div>
       </div>
     </section>
