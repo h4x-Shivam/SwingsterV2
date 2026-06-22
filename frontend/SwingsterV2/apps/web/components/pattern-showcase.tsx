@@ -259,10 +259,7 @@ export function PatternShowcase({ isAuthenticated = false }: { isAuthenticated?:
             move markets
           </span>
         </h2>
-        <p className="mt-4 text-base md:text-lg text-[#71717a] max-w-2xl mx-auto">
-          Swingster scans thousands of charts in real-time, surfacing
-          high-probability patterns the moment they form.
-        </p>
+
       </div>
 
       {/* ── Sticky scroll content ── */}
