@@ -167,9 +167,7 @@ export function WatchlistShowcase({ isAuthenticated = false }: { isAuthenticated
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-white/50 max-w-2xl mx-auto leading-relaxed"
           >
-            Save your favorite breakout candidates in one place. Every user gets
-            their own private, synced watchlist — powered by real-time pattern
-            data.
+            Save your favorite breakout candidates in one place.
           </motion.p>
         </div>
 

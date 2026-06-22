@@ -138,9 +138,9 @@ export function HowItWorks() {
               We remove<br/>the noise.
             </motion.h3>
 
-            <div className="relative w-full max-w-[280px] mx-auto flex-1 flex flex-col items-center h-[380px]">
+            <div className="relative w-full max-w-[320px] mx-auto flex-1 flex flex-col items-center h-[380px]">
                {/* Detailed Funnel SVG Background */}
-               <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ filter: "drop-shadow(0 0 12px rgba(16,185,129,0.3))" }} viewBox="0 0 280 380">
+               <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ filter: "drop-shadow(0 0 12px rgba(16,185,129,0.3))" }} viewBox="0 0 320 380">
                  <defs>
                    <linearGradient id="funnelFill" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="rgba(16,185,129,0.02)" />
@@ -155,7 +155,7 @@ export function HowItWorks() {
 
                  {/* Bottom Glow Vertical Drop */}
                  <motion.path 
-                   d="M80,340 L200,340 L170,380 L110,380 Z"
+                   d="M60,340 L260,340 L230,380 L90,380 Z"
                    fill="url(#glowBottom)"
                    initial={{ opacity: 0 }}
                    animate={isInView ? { opacity: 1 } : {}}
@@ -164,7 +164,7 @@ export function HowItWorks() {
 
                  {/* Main Funnel Fill */}
                  <motion.path 
-                    d="M0,0 L280,0 L200,340 L80,340 Z"
+                    d="M0,0 L320,0 L260,340 L60,340 Z"
                     fill="url(#funnelFill)"
                     initial={{ opacity: 0 }}
                     animate={isInView ? { opacity: 1 } : {}}
@@ -173,7 +173,7 @@ export function HowItWorks() {
 
                  {/* Funnel Outline */}
                  <motion.path 
-                    d="M0,0 L280,0 L200,340 L80,340 Z"
+                    d="M0,0 L320,0 L260,340 L60,340 Z"
                     fill="none"
                     stroke="#10b981"
                     strokeWidth="1.5"
@@ -184,28 +184,28 @@ export function HowItWorks() {
 
                  {/* Divider 1 */}
                  <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.0 }}>
-                    <line x1="22.5" y1="95" x2="257.5" y2="95" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
-                    <circle cx="140" cy="95" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
-                    <path d="M135,93 L140,98 L145,93" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="17" y1="95" x2="303" y2="95" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="160" cy="95" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M155,93 L160,98 L165,93" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                  </motion.g>
 
                  {/* Divider 2 */}
                  <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.2 }}>
-                    <line x1="43.5" y1="185" x2="236.5" y2="185" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
-                    <circle cx="140" cy="185" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
-                    <path d="M135,183 L140,188 L145,183" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="32.5" y1="185" x2="287.5" y2="185" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="160" cy="185" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M155,183 L160,188 L165,183" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                  </motion.g>
 
                  {/* Divider 3 */}
                  <motion.g initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : {}} transition={{ duration: 0.5, delay: 2.4 }}>
-                    <line x1="62.5" y1="265" x2="217.5" y2="265" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
-                    <circle cx="140" cy="265" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
-                    <path d="M135,263 L140,268 L145,263" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    <line x1="47" y1="265" x2="273" y2="265" stroke="rgba(16, 185, 129, 0.4)" strokeWidth="1" />
+                    <circle cx="160" cy="265" r="14" fill="#0a0a0a" stroke="#10b981" strokeWidth="1.5" />
+                    <path d="M155,263 L160,268 L165,263" stroke="#10b981" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                  </motion.g>
 
                  {/* Base platform ellipse (Glow) */}
                  <motion.ellipse
-                    cx="140" cy="340" rx="60" ry="12"
+                    cx="160" cy="340" rx="100" ry="12"
                     fill="#10b981"
                     style={{ filter: "blur(8px)" }}
                     initial={{ opacity: 0 }}
@@ -214,7 +214,7 @@ export function HowItWorks() {
                  />
                  {/* Base platform ellipse (Solid) */}
                  <motion.ellipse
-                    cx="140" cy="340" rx="60" ry="8"
+                    cx="160" cy="340" rx="100" ry="8"
                     fill="rgba(16,185,129,0.2)"
                     stroke="#10b981"
                     strokeWidth="2"
@@ -252,16 +252,16 @@ export function HowItWorks() {
                  </div>
 
                  {/* Layer 4: 265 - 340 */}
-                 <div className="absolute top-[265px] w-full h-[75px] flex flex-col items-center justify-center pb-2">
+                 <div className="absolute top-[280px] w-full h-[60px] flex flex-col items-center justify-start">
                    <motion.div 
                      initial={{ scale: 0.8, textShadow: "none" }}
                      animate={isInView ? { scale: 1, textShadow: "0 0 20px rgba(16,185,129,0.8)" } : {}}
                      transition={{ duration: 0.5, delay: 3.8 }}
-                     className="text-3xl md:text-4xl font-mono font-black text-emerald-400"
+                     className="text-2xl md:text-3xl font-mono font-black text-emerald-400 leading-none"
                    >
                      {isInView ? <CountUp end={10} duration={1} delay={3.0} useEasing /> : "0"}
                    </motion.div>
-                   <div className="text-[10px] text-emerald-400/80 uppercase tracking-widest font-bold mt-1">High-Conviction Setups</div>
+                   <div className="text-[8px] md:text-[9px] text-emerald-400/80 uppercase tracking-widest font-bold mt-2">High-Conviction Setups</div>
                  </div>
 
                </div>
