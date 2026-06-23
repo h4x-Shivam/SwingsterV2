@@ -211,9 +211,23 @@ async def fetch_all(tickers: list[str], period: str) -> int:
             for i, coro in enumerate(asyncio.as_completed(tasks), 1):
                 rows = await coro
                 if rows:
-                    written = write_ohlcv(rows, conn=conn)
-                    total_rows += written
-                    success_count += 1
+                    for db_attempt in range(3):
+                        try:
+                            written = write_ohlcv(rows, conn=conn)
+                            total_rows += written
+                            success_count += 1
+                            break
+                        except Exception as e:
+                            log.warning("Database error (%s). Reconnecting... (attempt %d/3)", type(e).__name__, db_attempt + 1)
+                            try:
+                                conn.close()
+                            except Exception:
+                                pass
+                            await asyncio.sleep(2)
+                            conn = get_connection()
+                    else:
+                        log.error("Failed to write to DB after 3 attempts.")
+                        fail_count += 1
                 else:
                     fail_count += 1
 
