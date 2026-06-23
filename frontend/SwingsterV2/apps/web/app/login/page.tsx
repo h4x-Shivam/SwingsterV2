@@ -1,8 +1,75 @@
-import { login, signup, loginWithGoogle } from './actions'
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { LiquidEther } from '@/components/ui/liquid-ether'
 import Link from 'next/link'
 
 export default function LoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  
+  const router = useRouter()
+  const supabase = createClient()
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    
+    if (error) {
+      setError(error.message)
+      setIsLoading(false)
+    } else {
+      router.push('/')
+      router.refresh()
+    }
+  }
+
+  const handleSignup = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    if (!email || !password) {
+      setError('Please enter both email and password to sign up')
+      return
+    }
+    
+    setIsLoading(true)
+    setError(null)
+    
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password,
+      options: {
+        emailRedirectTo: `${siteUrl}/auth/callback`,
+      }
+    })
+    
+    if (error) {
+      setError(error.message)
+      setIsLoading(false)
+    } else {
+      router.push('/')
+      router.refresh()
+    }
+  }
+
+  const handleGoogleLogin = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${siteUrl}/auth/callback`,
+      },
+    })
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center relative overflow-hidden bg-surface">
       {/* ── Global Liquid Ether Background ── */}
@@ -20,15 +87,20 @@ export default function LoginPage() {
       <div className="relative z-10 w-full max-w-md p-8 md:p-10 rounded-3xl bg-[#0c0c10]/80 backdrop-blur-xl border border-white/10 shadow-[0_0_50px_rgba(16,185,129,0.1)]">
         
         <div className="mb-8 text-center">
-
           <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
           <p className="text-white/60">Sign in to your account to continue.</p>
         </div>
 
-        <form className="flex flex-col gap-4">
+        {error && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 text-sm text-center">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleLogin} className="flex flex-col gap-4">
           <button 
-            formAction={loginWithGoogle}
-            formNoValidate
+            type="button"
+            onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 py-3.5 bg-white text-black hover:bg-gray-100 font-bold rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(255,255,255,0.1)] mb-2"
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="20px" height="20px">
@@ -55,6 +127,8 @@ export default function LoginPage() {
               id="email" 
               name="email" 
               type="email" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required 
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
@@ -67,6 +141,8 @@ export default function LoginPage() {
               id="password" 
               name="password" 
               type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" 
               required 
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 transition-all"
@@ -74,10 +150,11 @@ export default function LoginPage() {
           </div>
 
           <button 
-            formAction={login} 
-            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-2"
+            type="submit"
+            disabled={isLoading}
+            className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-black font-bold rounded-lg transition-all duration-300 shadow-[0_0_15px_rgba(16,185,129,0.3)] mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Log in
+            {isLoading ? 'Processing...' : 'Log in'}
           </button>
           
           <div className="relative mt-2 mb-2">
@@ -90,8 +167,10 @@ export default function LoginPage() {
           </div>
 
           <button 
-            formAction={signup} 
-            className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg border border-white/10 transition-all duration-300"
+            type="button"
+            onClick={handleSignup}
+            disabled={isLoading}
+            className="w-full py-3.5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-lg border border-white/10 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Create an account
           </button>
@@ -100,3 +179,4 @@ export default function LoginPage() {
     </main>
   )
 }
+
