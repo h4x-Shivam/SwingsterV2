@@ -70,6 +70,7 @@ def init_db(db_url: str = DATABASE_URL) -> None:
 def write_ohlcv(
     rows: list[tuple[str, str, float, float, float, float, int]],
     db_url: str = DATABASE_URL,
+    conn = None
 ) -> int:
     """
     Upsert a batch of OHLCV rows into the database.
@@ -82,7 +83,11 @@ def write_ohlcv(
     if not rows:
         return 0
 
-    conn = get_connection(db_url)
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_url)
+        should_close = True
+        
     try:
         with conn.cursor() as cursor:
             query = """
@@ -99,7 +104,8 @@ def write_ohlcv(
         conn.commit()
         return len(rows)
     finally:
-        conn.close()
+        if should_close:
+            conn.close()
 
 
 # ---------------------------------------------------------------------------

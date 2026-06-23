@@ -187,7 +187,7 @@ async def fetch_one(
 
 async def fetch_all(tickers: list[str], period: str) -> int:
     """
-    Fetch OHLCV data for all tickers concurrently and write to SQLite.
+    Fetch OHLCV data for all tickers concurrently and write to SQLite/Postgres.
 
     Uses asyncio.Semaphore to cap concurrency at SEMAPHORE_LIMIT.
     Returns the total number of OHLCV rows written.
@@ -201,26 +201,32 @@ async def fetch_all(tickers: list[str], period: str) -> int:
     success_count = 0
     fail_count = 0
 
-    async with aiohttp.ClientSession(connector=connector, headers=headers, timeout=timeout) as session:
-        tasks = [fetch_one(session, semaphore, t, period) for t in tickers]
+    from fetcher.db_writer import get_connection
+    conn = get_connection()
 
-        for i, coro in enumerate(asyncio.as_completed(tasks), 1):
-            rows = await coro
-            if rows:
-                written = write_ohlcv(rows)
-                total_rows += written
-                success_count += 1
-            else:
-                fail_count += 1
+    try:
+        async with aiohttp.ClientSession(connector=connector, headers=headers, timeout=timeout) as session:
+            tasks = [fetch_one(session, semaphore, t, period) for t in tickers]
 
-            # Progress log every 100 tickers
-            if i % 100 == 0 or i == len(tickers):
-                log.info("Progress: %d/%d tickers processed  (%d rows so far)",
-                         i, len(tickers), total_rows)
+            for i, coro in enumerate(asyncio.as_completed(tasks), 1):
+                rows = await coro
+                if rows:
+                    written = write_ohlcv(rows, conn=conn)
+                    total_rows += written
+                    success_count += 1
+                else:
+                    fail_count += 1
 
-    log.info("Fetch complete — %d success, %d failed, %d total rows written",
-             success_count, fail_count, total_rows)
-    return total_rows
+                # Progress log every 100 tickers
+                if i % 100 == 0 or i == len(tickers):
+                    log.info("Progress: %d/%d tickers processed  (%d rows so far)",
+                             i, len(tickers), total_rows)
+
+        log.info("Fetch complete — %d success, %d failed, %d total rows written",
+                 success_count, fail_count, total_rows)
+        return total_rows
+    finally:
+        conn.close()
 
 
 # ---------------------------------------------------------------------------
