@@ -65,12 +65,7 @@ SCAN_MODE  = "VCP"   # default mode — change per run
 MIN_CANDIDATE_SCORE = 50.0     # fallback for ALL mode
 MAX_CANDIDATES = 20            # fallback pool size for ALL mode
 
-# Groq API — Judge Agent
-GROQ_API_KEY         = os.getenv("GROQ_API_KEY", "YOUR_GROQ_KEY_HERE")
-GROQ_MODEL           = "llama-3.1-8b-instant"       # free-tier friendly
-GROQ_MODEL_FALLBACK  = "llama-3.3-70b-versatile"     # for paid tier
-GROQ_MAX_TOKENS      = 1024
-GROQ_TIMEOUT         = 60     # seconds
+# (Groq API settings removed for deterministic Auto-Judge)
 
 
 # (Individual scoring weights are now defined per-pattern in their respective config.py files)

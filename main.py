@@ -80,7 +80,7 @@ if __name__ == "__main__":
             c["pledge_pct"] = None
 
     # Wire judge
-    print(f"\nSending {len(candidates_dict)} candidates to Groq judge...")
+    print(f"\nEvaluating {len(candidates_dict)} candidates with Auto-Judge...")
     sys.stdout.flush()
     final_picks = run_judge(candidates_dict, mode=args.mode)
             
