@@ -39,7 +39,7 @@ FETCH_PERIOD = "1y"            # first-time full fetch (range param)
 FETCH_DELTA_PERIOD = "5d"      # nightly delta fetch
 FETCH_INTERVAL = "1d"          # daily candles
 
-SEMAPHORE_LIMIT = 15           # max concurrent aiohttp requests (Windows safe)
+SEMAPHORE_LIMIT = 5            # max concurrent aiohttp requests (Windows safe)
 RETRY_ATTEMPTS = 5             # retries per ticker on failure
 RETRY_DELAY = 3                # base delay in seconds (exponential backoff)
 

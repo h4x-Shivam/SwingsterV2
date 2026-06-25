@@ -139,6 +139,42 @@ def read_ohlcv(
             conn.close()
 
 
+def read_ohlcv_batch(
+    symbols: list[str],
+    db_url: str = DATABASE_URL,
+    conn = None,
+) -> dict[str, list[tuple[str, float, float, float, float, int]]]:
+    """
+    Read all OHLCV rows for a batch of symbols, ordered by symbol and date ascending.
+    
+    Returns a dictionary mapping each symbol to its list of (date, open, high, low, close, volume) tuples.
+    """
+    if not symbols:
+        return {}
+
+    should_close = False
+    if conn is None:
+        conn = get_connection(db_url)
+        should_close = True
+        
+    result = {sym: [] for sym in symbols}
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "SELECT symbol, date, open, high, low, close, volume "
+                "FROM ohlcv WHERE symbol IN %s ORDER BY symbol, date ASC;",
+                (tuple(symbols),)
+            )
+            for row in cursor.fetchall():
+                sym = row[0]
+                if sym in result:
+                    result[sym].append((row[1], row[2], row[3], row[4], row[5], row[6]))
+        return result
+    finally:
+        if should_close:
+            conn.close()
+
+
 def get_all_symbols(db_url: str = DATABASE_URL) -> list[str]:
     """
     Return a sorted list of all distinct symbols stored in the database.

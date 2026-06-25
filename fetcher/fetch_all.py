@@ -22,6 +22,7 @@ import csv
 import logging
 import sys
 import time
+import random
 from datetime import datetime, timezone
 
 import aiohttp
@@ -149,6 +150,9 @@ async def fetch_one(
     url = YAHOO_CHART_URL.format(ticker=ticker)
     params = {"interval": FETCH_INTERVAL, "range": period}
 
+    # Add a random initial jitter to avoid thundering herd on Yahoo
+    await asyncio.sleep(random.uniform(0.1, 1.0))
+
     for attempt in range(1, RETRY_ATTEMPTS + 1):
         try:
             async with semaphore:
@@ -195,7 +199,7 @@ async def fetch_all(tickers: list[str], period: str) -> int:
     semaphore = asyncio.Semaphore(SEMAPHORE_LIMIT)
     connector = aiohttp.TCPConnector(ssl=False)
     headers = {"User-Agent": USER_AGENT}
-    timeout = aiohttp.ClientTimeout(total=30)
+    timeout = aiohttp.ClientTimeout(total=60)
 
     total_rows = 0
     success_count = 0

@@ -29,6 +29,7 @@ from config import (
 )
 from fetcher.db_writer import (
     read_ohlcv,
+    read_ohlcv_batch,
     get_eligible_symbols,
     get_prefilter_counts,
     get_connection,
@@ -60,6 +61,7 @@ def scan_symbol(
     conn: Optional[sqlite3.Connection] = None,
     nifty_candles: Optional[list[Candle]] = None,
     mode: str = "ALL",
+    preloaded_rows: Optional[list[tuple]] = None,
 ) -> Optional[ScanResult]:
     """
     Run the full analysis pipeline for a single symbol.
@@ -70,8 +72,12 @@ def scan_symbol(
       • Illiquid (avg volume < 50k)
       • No chart pattern detected
     """
-    # 1. Read OHLCV from DB
-    rows = read_ohlcv(symbol, conn=conn)
+    # 1. Read OHLCV from DB or use preloaded
+    if preloaded_rows is not None:
+        rows = preloaded_rows
+    else:
+        rows = read_ohlcv(symbol, conn=conn)
+        
     if not rows:
         return None
 
@@ -194,12 +200,16 @@ def _scan_batch(args: tuple) -> tuple[list[ScanResult], int, list[str]]:
         nifty_rows = read_ohlcv("^NSEI", conn=conn)
         nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
         
+        # Batch fetch all data for this worker's symbols
+        batch_data = read_ohlcv_batch(batch, conn=conn)
+        
         results = []
         rejected_rr = []
         scanned_count = 0
         for symbol in batch:
             try:
-                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles, mode=mode)
+                rows = batch_data.get(symbol, [])
+                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles, mode=mode, preloaded_rows=rows)
                 if res is not None:
                     results.append(res)
             except RejectedRRError:
