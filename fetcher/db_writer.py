@@ -159,38 +159,41 @@ def read_ohlcv_batch(
         
     result = {sym: [] for sym in symbols}
     
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            with conn.cursor() as cursor:
-                cursor.execute(
-                    "SELECT symbol, date, open, high, low, close, volume "
-                    "FROM ohlcv WHERE symbol IN %s ORDER BY symbol, date ASC;",
-                    (tuple(symbols),)
-                )
-                for row in cursor.fetchall():
-                    sym = row[0]
-                    if sym in result:
-                        result[sym].append((row[1], row[2], row[3], row[4], row[5], row[6]))
-            return result
-        except psycopg2.OperationalError as e:
-            import time
-            if attempt < max_retries - 1:
-                time.sleep(1)
-                try:
-                    conn.close()
-                except:
-                    pass
-                conn = get_connection(db_url)
-                if not should_close:
-                    should_close = True # We now own this new connection
-            else:
-                raise e
-        finally:
-            pass # Keep going if not max retries
-            
+    chunk_size = 500
+    for i in range(0, len(symbols), chunk_size):
+        chunk = symbols[i:i+chunk_size]
+        placeholders = ', '.join(['%s'] * len(chunk))
+        
+        max_retries = 3
+        retries = max_retries
+        while retries > 0:
+            try:
+                with conn.cursor() as cursor:
+                    cursor.execute(
+                        "SELECT symbol, date, open, high, low, close, volume "
+                        f"FROM ohlcv WHERE symbol IN ({placeholders}) "
+                        "ORDER BY symbol, date ASC;",
+                        chunk
+                    )
+                    rows = cursor.fetchall()
+                    conn.commit()
+                    for row in rows:
+                        sym = row[0]
+                        if sym in result:
+                            result[sym].append((row[1], row[2], row[3], row[4], row[5], row[6]))
+                break
+            except psycopg2.OperationalError as e:
+                conn.rollback()
+                print(f"[{os.getpid()}] Database OperationalError on batch {i}: {e}. Retrying {retries-1} more times...")
+                retries -= 1
+                import time
+                time.sleep(2)
+                if retries == 0:
+                    raise e
+                    
     if should_close:
         conn.close()
+    return result
 
 
 def get_all_symbols(db_url: str = DATABASE_URL) -> list[str]:
