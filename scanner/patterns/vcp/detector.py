@@ -1,6 +1,7 @@
 from scanner.patterns.base import BasePattern
 from scanner.patterns.vcp.config import VCP_CONFIG
 from scanner.models import PatternSignal, Candle
+from scanner.patterns.pivots import calculate_atr_pct
 import os
 
 class VCPPattern(BasePattern):
@@ -13,10 +14,12 @@ class VCPPattern(BasePattern):
                 return None
 
             current_price = candles[-1].close
-            windows = [120, 90, 60, 40, 25]
+            windows = [120, 90, 60, 40, 25, 18]
             
             best_signal = None
             is_debug = os.environ.get("DEBUG_VCP") == "1"
+            atr_pct = calculate_atr_pct(candles)
+            swing_threshold = max(0.025, min(0.08, atr_pct * 2.5))
             
             for lookback in windows:
                 if len(candles) < lookback:
@@ -24,12 +27,14 @@ class VCPPattern(BasePattern):
                     
                 recent_candles = candles[-lookback:]
                 
-                # 1. Base start is the highest high in this window that occurred at least 15 days ago
-                if len(recent_candles) < 15:
-                    if is_debug: print(f"Window {lookback}: Rejected - window too small")
+                trailing_exclude = min(14, max(5, int(lookback * 0.15)))
+                min_required = trailing_exclude + 10
+
+                if len(recent_candles) < min_required:
+                    if is_debug: print(f"Window {lookback}: Rejected - window too small after exclusion")
                     continue
                     
-                eligible_for_base = recent_candles[:-14]
+                eligible_for_base = recent_candles[:-trailing_exclude]
                 base_high_val = max(c.high for c in eligible_for_base)
                 base_high_idx = next(i for i, c in enumerate(recent_candles) if c.high == base_high_val)
                 
@@ -47,14 +52,14 @@ class VCPPattern(BasePattern):
                     if direction == 'down':
                         if c.low < trough:
                             trough = c.low
-                        elif c.high > trough * 1.04: # 4% bounce validates the trough
+                        elif c.high > trough * (1 + swing_threshold): # dynamic bounce validates the trough
                             swings.append({'type': 'trough', 'price': trough, 'index': i})
                             direction = 'up'
                             peak = c.high
                     else: # up
                         if c.high > peak:
                             peak = c.high
-                        elif c.low < peak * 0.96: # 4% drop validates the peak
+                        elif c.low < peak * (1 - swing_threshold): # dynamic drop validates the peak
                             swings.append({'type': 'peak', 'price': peak, 'index': i})
                             direction = 'down'
                             trough = c.low
@@ -97,9 +102,9 @@ class VCPPattern(BasePattern):
                                 is_strict = False
                                 break
                                 
-                        # Right side must be tight (< 10% depth)
-                        if is_strict and seq[-1]['depth'] > 0.10:
-                            if is_debug: print(f"  SeqLen {seq_len}: Rejected - Final depth {seq[-1]['depth']*100:.1f}% > 10%")
+                        max_final_depth = max(0.05, min(0.15, atr_pct * 4))
+                        if is_strict and seq[-1]['depth'] > max_final_depth:
+                            if is_debug: print(f"  SeqLen {seq_len}: Rejected - Final depth {seq[-1]['depth']*100:.1f}% > {max_final_depth*100:.1f}%")
                             is_strict = False
                             
                         # Actionability: price near the last peak
@@ -107,8 +112,10 @@ class VCPPattern(BasePattern):
                             last_peak = seq[-1]['peak_price']
                             dist_from_buy = (current_price - last_peak) / last_peak
                             
-                            # Too extended (> 5%) or too deep below (< -12%)
-                            if dist_from_buy > 0.05 or dist_from_buy < -0.12:
+                            max_extension = max(0.03, min(0.08, atr_pct * 2))
+                            max_pullback   = max(0.08, min(0.20, atr_pct * 5))
+                            
+                            if dist_from_buy > max_extension or dist_from_buy < -max_pullback:
                                 if is_debug: print(f"  SeqLen {seq_len}: Rejected - Dist from buy {dist_from_buy*100:.1f}% out of bounds")
                                 is_strict = False
                             
@@ -125,7 +132,10 @@ class VCPPattern(BasePattern):
                             last_leg_candles = max(1, end_idx - seq[-1]['peak_idx'])
                             last_leg_vol = last_leg_vol_sum / last_leg_candles
                             
-                            if last_leg_vol <= first_leg_vol * 1.10: # Allow slight volume increase, but prefer dry up
+                            # NOTE: volume tolerance (1.10) is intentionally NOT ATR-relative.
+                            # Volume behavior doesn't correlate with price volatility the same
+                            # way price thresholds do. Keep this fixed.
+                            if last_leg_vol <= first_leg_vol * 1.10:
                                 valid_seq = seq
                                 if is_debug: print(f"  SeqLen {seq_len}: ACCEPTED!")
                                 break # Found best sequence!
@@ -137,16 +147,32 @@ class VCPPattern(BasePattern):
                     distance_pct = (current_price - buy_point) / buy_point * 100
                     
                     # 6. Scoring
-                    # Reward perfectly descending geometry
                     geometry_score = 100
                     for i in range(len(valid_seq) - 1):
                         ratio = valid_seq[i+1]['depth'] / valid_seq[i]['depth']
-                        if ratio < 0.8: geometry_score += 5   # Great contraction
-                        if ratio > 1.0: geometry_score -= 15  # Sloppy contraction
+                        if ratio <= 1.0:
+                            adjustment = 15 - ((ratio - 0.5) / 0.5) * 27
+                            geometry_score += adjustment
+                        else:
+                            geometry_score -= 25
+                            
+                    MIN_GEOMETRY_SCORE = 45
+                    if geometry_score < MIN_GEOMETRY_SCORE:
+                        if is_debug:
+                            print(f"  SeqLen {seq_len}: Geometry score {geometry_score:.1f} below floor {MIN_GEOMETRY_SCORE} — rejecting weak shape")
+                        continue
                         
-                    # Reward tight right side
-                    tightness = valid_seq[-1]['depth'] * 100
-                    tightness_score = 100 - (tightness * 5) # 4% depth = 80, 10% depth = 50
+                    tightness = valid_seq[-1]['depth']
+                    atr_multiples = tightness / max(atr_pct, 0.005)
+
+                    if atr_multiples <= 1.0:
+                        tightness_score = 100
+                    elif atr_multiples <= 2.0:
+                        tightness_score = 100 - (atr_multiples - 1.0) * 30
+                    elif atr_multiples <= 4.0:
+                        tightness_score = 70 - (atr_multiples - 2.0) * 15
+                    else:
+                        tightness_score = max(10, 40 - (atr_multiples - 4.0) * 10)
                     
                     strength = (geometry_score + tightness_score) / 2.0
                     

@@ -24,10 +24,10 @@ def analyze_trend(candles: list[Candle]) -> TrendStatus:
     """
     Compute Minervini Stage 2 status for a list of daily candles.
 
-    Returns a default (all-False, score=0) TrendStatus when fewer than
-    200 candles are available.
+    Gracefully handles stocks with fewer than 200 candles by using the
+    maximum available history for long-term moving averages.
     """
-    if len(candles) < 200:
+    if len(candles) < 60:
         return TrendStatus()
 
     closes = [c.close for c in candles]
@@ -35,18 +35,20 @@ def analyze_trend(candles: list[Candle]) -> TrendStatus:
 
     current_price = closes[-1]
 
-    # Moving averages
-    ma150 = _sma(closes, 150)
-    ma200_now = _sma(closes, 200)
+    # Use max available up to the required period
+    ma150_period = min(150, len(closes))
+    ma200_period = min(200, len(closes))
 
-    # 200 MA from 20 days ago — need at least 220 candles ideally,
-    # but if we only have 200, compare against the 200-MA computed at
-    # position [-21] (i.e. using closes[:-20]).
-    if len(closes) >= 220:
-        ma200_20ago = _sma(closes[:-20], 200)
+    # Moving averages
+    ma150 = _sma(closes, ma150_period)
+    ma200_now = _sma(closes, ma200_period)
+
+    # 200 MA from 20 days ago (or as far back as possible)
+    if len(closes) >= ma200_period + 20:
+        ma200_20ago = _sma(closes[:-20], ma200_period)
     else:
-        # Approximate: use available data shifted by 20
-        ma200_20ago = _sma(closes[:200], 200)
+        # Approximate: use the oldest available MA
+        ma200_20ago = _sma(closes[:ma200_period], ma200_period)
 
     # 52-week high (252 trading days, or all available if fewer)
     lookback = min(len(highs), 252)

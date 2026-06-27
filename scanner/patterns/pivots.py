@@ -53,3 +53,23 @@ def find_swing_pivots(
             lows.append(SwingLow(index=i, price=c_low))
 
     return highs, lows
+
+def calculate_atr_pct(candles: list, period: int = 14) -> float:
+    """
+    Average True Range as a PERCENTAGE of current price.
+    This is the stock's own normal daily volatility, normalized.
+    Use this instead of fixed percentages anywhere in pattern detection.
+    """
+    if len(candles) < period + 1:
+        return 0.02  # 2% fallback for insufficient data
+
+    true_ranges = []
+    for i in range(1, len(candles)):
+        high_low   = candles[i].high - candles[i].low
+        high_close = abs(candles[i].high - candles[i-1].close)
+        low_close  = abs(candles[i].low - candles[i-1].close)
+        true_ranges.append(max(high_low, high_close, low_close))
+
+    atr = sum(true_ranges[-period:]) / period
+    current_price = candles[-1].close
+    return atr / current_price if current_price > 0 else 0.02

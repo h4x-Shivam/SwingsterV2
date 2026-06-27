@@ -158,21 +158,39 @@ def read_ohlcv_batch(
         should_close = True
         
     result = {sym: [] for sym in symbols}
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "SELECT symbol, date, open, high, low, close, volume "
-                "FROM ohlcv WHERE symbol IN %s ORDER BY symbol, date ASC;",
-                (tuple(symbols),)
-            )
-            for row in cursor.fetchall():
-                sym = row[0]
-                if sym in result:
-                    result[sym].append((row[1], row[2], row[3], row[4], row[5], row[6]))
-        return result
-    finally:
-        if should_close:
-            conn.close()
+    
+    max_retries = 3
+    for attempt in range(max_retries):
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT symbol, date, open, high, low, close, volume "
+                    "FROM ohlcv WHERE symbol IN %s ORDER BY symbol, date ASC;",
+                    (tuple(symbols),)
+                )
+                for row in cursor.fetchall():
+                    sym = row[0]
+                    if sym in result:
+                        result[sym].append((row[1], row[2], row[3], row[4], row[5], row[6]))
+            return result
+        except psycopg2.OperationalError as e:
+            import time
+            if attempt < max_retries - 1:
+                time.sleep(1)
+                try:
+                    conn.close()
+                except:
+                    pass
+                conn = get_connection(db_url)
+                if not should_close:
+                    should_close = True # We now own this new connection
+            else:
+                raise e
+        finally:
+            pass # Keep going if not max retries
+            
+    if should_close:
+        conn.close()
 
 
 def get_all_symbols(db_url: str = DATABASE_URL) -> list[str]:
