@@ -192,35 +192,26 @@ def scan_symbol(
 def _scan_batch(args: tuple) -> tuple[list[ScanResult], int, list[str]]:
     """
     Worker entry point for processing a batch of symbols.
-    Opens its own SQLite connection, pre-loads nifty candles, and scans symbols.
+    Uses pre-fetched OHLCV data provided by the parent process.
     """
-    batch, mode = args
-    conn = get_connection()
-    try:
-        nifty_rows = read_ohlcv("^NSEI", conn=conn)
-        nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
-        
-        # Batch fetch all data for this worker's symbols
-        batch_data = read_ohlcv_batch(batch, conn=conn)
-        
-        results = []
-        rejected_rr = []
-        scanned_count = 0
-        for symbol in batch:
-            try:
-                rows = batch_data.get(symbol, [])
-                res = scan_symbol(symbol, conn=conn, nifty_candles=nifty_candles, mode=mode, preloaded_rows=rows)
-                if res is not None:
-                    results.append(res)
-            except RejectedRRError:
-                rejected_rr.append(symbol)
-            except Exception as e:
-                print(f"[WARN] {symbol}: {e}", file=sys.stderr)
-            finally:
-                scanned_count += 1
-        return results, scanned_count, rejected_rr
-    finally:
-        conn.close()
+    batch, mode, batch_data, nifty_candles = args
+    
+    results = []
+    rejected_rr = []
+    scanned_count = 0
+    for symbol in batch:
+        try:
+            rows = batch_data.get(symbol, [])
+            res = scan_symbol(symbol, conn=None, nifty_candles=nifty_candles, mode=mode, preloaded_rows=rows)
+            if res is not None:
+                results.append(res)
+        except RejectedRRError:
+            rejected_rr.append(symbol)
+        except Exception as e:
+            print(f"[WARN] {symbol}: {e}", file=sys.stderr)
+        finally:
+            scanned_count += 1
+    return results, scanned_count, rejected_rr
 
 
 # ---------------------------------------------------------------------------
@@ -291,16 +282,31 @@ def scan_all(
     print(f"Workers to be used   : {actual_workers}")
     print(f"Eligible symbols     : {len(eligible_symbols)}")
     print(f"Batch size per worker: ~{batch_size}")
-    print(f"Estimated scan time  : ~8s")
+    print(f"Fetching data        : Remote PostgreSQL (Sequential)")
     print("-" * 49 + "\n")
+    sys.stdout.flush()
+
+    # Pre-fetch Nifty candles
+    nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
+
+    # Fetch ALL data in the parent process
+    t_fetch_start = time.perf_counter()
+    print("Fetching OHLCV data for eligible symbols from PostgreSQL...")
+    sys.stdout.flush()
+    all_batch_data = read_ohlcv_batch(eligible_symbols)
+    print(f"Data fetch complete in {time.perf_counter() - t_fetch_start:.1f}s")
     sys.stdout.flush()
 
     # 2.6 Batch splitting strategy using round-robin slice
     batches = [eligible_symbols[i::actual_workers] for i in range(actual_workers)]
     batches = [b for b in batches if b]  # Avoid empty batches
 
-    # Pack (batch, mode) tuple for each worker
-    worker_args = [(batch, mode) for batch in batches]
+    # Pack (batch, mode, batch_data_subset, nifty_candles) tuple for each worker
+    worker_args = []
+    for batch in batches:
+        # Extract only the data needed for this batch to minimize pickling size
+        subset_data = {sym: all_batch_data.get(sym, []) for sym in batch}
+        worker_args.append((batch, mode, subset_data, nifty_candles))
 
     t0 = time.perf_counter()
     results: list[ScanResult] = []
