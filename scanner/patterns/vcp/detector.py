@@ -1,7 +1,7 @@
 from scanner.patterns.base import BasePattern
 from scanner.patterns.vcp.config import VCP_CONFIG
 from scanner.models import PatternSignal, Candle
-from scanner.patterns.pivots import calculate_atr_pct
+from scanner.patterns.pivots import calculate_atr_pct, find_swing_pivots
 import os
 
 class VCPPattern(BasePattern):
@@ -13,193 +13,228 @@ class VCPPattern(BasePattern):
             if not self.is_eligible(candles):
                 return None
 
-            current_price = candles[-1].close
-            windows = [120, 90, 60, 40, 25, 18]
-            
-            best_signal = None
             is_debug = os.environ.get("DEBUG_VCP") == "1"
+            current_price = candles[-1].close
             atr_pct = calculate_atr_pct(candles)
-            swing_threshold = max(0.025, min(0.08, atr_pct * 2.5))
             
-            for lookback in windows:
-                if len(candles) < lookback:
+            if not pivots or len(pivots) != 2:
+                pivots = find_swing_pivots(candles, lookback=120)
+                
+            swing_highs, swing_lows = pivots
+            
+            lookback = self.config.extras.get("pivot_lookback", 120)
+            lookback_start = max(0, len(candles) - lookback)
+            recent_highs = [sh for sh in swing_highs if sh.index >= lookback_start]
+            
+            if not recent_highs:
+                if is_debug: print(f"Rejected - no recent highs found in lookback {lookback}")
+                return None
+                
+            pivot = max(recent_highs, key=lambda h: h.price)
+            pivot_price = pivot.price
+            pivot_idx = pivot.index
+            
+            min_candles_post_pivot = self.config.extras.get("min_candles_post_pivot", 10)
+            if len(candles) - 1 - pivot_idx < min_candles_post_pivot:
+                if is_debug: print(f"Rejected - not enough candles after pivot ({len(candles) - 1 - pivot_idx} < {min_candles_post_pivot})")
+                return None
+                
+            pivot_proximity_bottom = self.config.extras.get("pivot_proximity_bottom", 0.80)
+            if current_price < pivot_price * pivot_proximity_bottom:
+                if is_debug: print(f"Rejected - price too far below pivot ({current_price} < {pivot_price * pivot_proximity_bottom})")
+                return None
+                
+            pivot_proximity_top = self.config.extras.get("pivot_proximity_top", 1.03)
+            if current_price > pivot_price * pivot_proximity_top:
+                if is_debug: print(f"Rejected - price extended above pivot ({current_price} > {pivot_price * pivot_proximity_top})")
+                return None
+                
+            post_pivot_lows = [sl for sl in swing_lows if sl.index > pivot_idx]
+            if len(post_pivot_lows) < 2:
+                if is_debug: print(f"Rejected - not enough post-pivot lows (found {len(post_pivot_lows)})")
+                return None
+                
+            first_pullback_max_depth = self.config.extras.get("first_pullback_max_depth", 35.0)
+            min_pullback_depth = self.config.extras.get("min_pullback_depth", 1.5)
+            vol_avg_window = self.config.extras.get("vol_avg_window", 5)
+            
+            pullbacks = []
+            for sl in post_pivot_lows:
+                depth_pct = (pivot_price - sl.price) / pivot_price * 100
+                if depth_pct < min_pullback_depth or depth_pct > first_pullback_max_depth:
                     continue
                     
-                recent_candles = candles[-lookback:]
+                vol_start = max(0, sl.index - vol_avg_window)
+                vol_end = min(len(candles), sl.index + vol_avg_window + 1)
+                vols = [candles[k].volume for k in range(vol_start, vol_end)]
+                avg_vol = sum(vols) / len(vols) if vols else 0
+                pullbacks.append({
+                    "index": sl.index,
+                    "low": sl.price,
+                    "depth_pct": depth_pct,
+                    "avg_vol": avg_vol,
+                })
                 
-                trailing_exclude = min(14, max(5, int(lookback * 0.15)))
-                min_required = trailing_exclude + 10
-
-                if len(recent_candles) < min_required:
-                    if is_debug: print(f"Window {lookback}: Rejected - window too small after exclusion")
-                    continue
-                    
-                eligible_for_base = recent_candles[:-trailing_exclude]
-                base_high_val = max(c.high for c in eligible_for_base)
-                base_high_idx = next(i for i, c in enumerate(recent_candles) if c.high == base_high_val)
+            if len(pullbacks) < 2:
+                if is_debug: print(f"Rejected - not enough valid pullbacks (found {len(pullbacks)})")
+                return None
                 
-                base_candles = recent_candles[base_high_idx:]
+            best_run = []
+            current_run = [pullbacks[0]]
+            for i in range(1, len(pullbacks)):
+                prev = current_run[-1]
+                curr = pullbacks[i]
                 
-                # 2. ZigZag Algorithm to find structural legs (filters out daily noise)
-                direction = 'down'
-                peak = base_candles[0].high
-                trough = base_candles[0].low
+                depth_contracting = curr["depth_pct"] < prev["depth_pct"]
+                ascending_low = curr["low"] > prev["low"]
                 
-                swings = [{'type': 'peak', 'price': peak, 'index': 0}]
-                
-                for i in range(1, len(base_candles)):
-                    c = base_candles[i]
-                    if direction == 'down':
-                        if c.low < trough:
-                            trough = c.low
-                        elif c.high > trough * (1 + swing_threshold): # dynamic bounce validates the trough
-                            swings.append({'type': 'trough', 'price': trough, 'index': i})
-                            direction = 'up'
-                            peak = c.high
-                    else: # up
-                        if c.high > peak:
-                            peak = c.high
-                        elif c.low < peak * (1 - swing_threshold): # dynamic drop validates the peak
-                            swings.append({'type': 'peak', 'price': peak, 'index': i})
-                            direction = 'down'
-                            trough = c.low
-                
-                # Append final state
-                if direction == 'down':
-                    swings.append({'type': 'trough', 'price': trough, 'index': len(base_candles)-1})
+                if depth_contracting and ascending_low:
+                    current_run.append(curr)
                 else:
-                    swings.append({'type': 'peak', 'price': peak, 'index': len(base_candles)-1})
+                    if len(current_run) > len(best_run):
+                        best_run = current_run
+                    current_run = [curr]
                     
-                # 3. Calculate contraction depths
-                contractions = []
-                for i in range(0, len(swings) - 1):
-                    if swings[i]['type'] == 'peak' and swings[i+1]['type'] == 'trough':
-                        p = swings[i]['price']
-                        t = swings[i+1]['price']
-                        depth = (p - t) / p
-                        contractions.append({
-                            'depth': depth,
-                            'peak_idx': swings[i]['index'],
-                            'trough_idx': swings[i+1]['index'],
-                            'peak_price': p
-                        })
-                        
-                if is_debug:
-                    print(f"Window {lookback}: Found {len(contractions)} contractions: {[round(c['depth']*100, 1) for c in contractions]}")
-                        
-                # 4. Check for STRICT Contraction in the last N legs
-                valid_seq = None
+            if len(current_run) > len(best_run):
+                best_run = current_run
                 
-                for seq_len in [4, 3, 2]:
-                    if len(contractions) >= seq_len:
-                        seq = contractions[-seq_len:]
-                        
-                        is_strict = True
-                        for i in range(len(seq) - 1):
-                            # Current depth must be smaller than previous (with 5% tolerance)
-                            if seq[i+1]['depth'] > seq[i]['depth'] * 1.05:
-                                if is_debug: print(f"  SeqLen {seq_len}: Rejected - Contraction {i+1} ({seq[i+1]['depth']*100:.1f}%) > {i} ({seq[i]['depth']*100:.1f}%)")
-                                is_strict = False
-                                break
-                                
-                        max_final_depth = max(0.05, min(0.15, atr_pct * 4))
-                        if is_strict and seq[-1]['depth'] > max_final_depth:
-                            if is_debug: print(f"  SeqLen {seq_len}: Rejected - Final depth {seq[-1]['depth']*100:.1f}% > {max_final_depth*100:.1f}%")
-                            is_strict = False
-                            
-                        # Actionability: price near the last peak
-                        if is_strict:
-                            last_peak = seq[-1]['peak_price']
-                            dist_from_buy = (current_price - last_peak) / last_peak
-                            
-                            max_extension = max(0.03, min(0.08, atr_pct * 2))
-                            max_pullback   = max(0.08, min(0.20, atr_pct * 5))
-                            
-                            if dist_from_buy > max_extension or dist_from_buy < -max_pullback:
-                                if is_debug: print(f"  SeqLen {seq_len}: Rejected - Dist from buy {dist_from_buy*100:.1f}% out of bounds")
-                                is_strict = False
-                            
-                        if is_strict:
-                            # 5. Volume Dry-up check
-                            first_leg_vol = sum(c.volume for c in base_candles[seq[0]['peak_idx']:seq[0]['trough_idx']+1]) / max(1, (seq[0]['trough_idx'] - seq[0]['peak_idx']))
-                            
-                            # Exclude the breakout candle from the dry-up calculation if it's an up day
-                            end_idx = len(base_candles)
-                            if end_idx - 1 > seq[-1]['peak_idx'] and base_candles[-1].close > base_candles[-1].open:
-                                end_idx -= 1
-                                
-                            last_leg_vol_sum = sum(c.volume for c in base_candles[seq[-1]['peak_idx']:end_idx])
-                            last_leg_candles = max(1, end_idx - seq[-1]['peak_idx'])
-                            last_leg_vol = last_leg_vol_sum / last_leg_candles
-                            
-                            # NOTE: volume tolerance (1.10) is intentionally NOT ATR-relative.
-                            # Volume behavior doesn't correlate with price volatility the same
-                            # way price thresholds do. Keep this fixed.
-                            if last_leg_vol <= first_leg_vol * 1.10:
-                                valid_seq = seq
-                                if is_debug: print(f"  SeqLen {seq_len}: ACCEPTED!")
-                                break # Found best sequence!
-                            else:
-                                if is_debug: print(f"  SeqLen {seq_len}: Rejected - Volume didn't dry up enough ({last_leg_vol} vs {first_leg_vol})")
-                                
-                if valid_seq:
-                    buy_point = valid_seq[-1]['peak_price']
-                    distance_pct = (current_price - buy_point) / buy_point * 100
-                    
-                    # 6. Scoring
-                    geometry_score = 100
-                    for i in range(len(valid_seq) - 1):
-                        ratio = valid_seq[i+1]['depth'] / valid_seq[i]['depth']
-                        if ratio <= 1.0:
-                            adjustment = 15 - ((ratio - 0.5) / 0.5) * 27
-                            geometry_score += adjustment
-                        else:
-                            geometry_score -= 25
-                            
-                    MIN_GEOMETRY_SCORE = 45
-                    if geometry_score < MIN_GEOMETRY_SCORE:
-                        if is_debug:
-                            print(f"  SeqLen {seq_len}: Geometry score {geometry_score:.1f} below floor {MIN_GEOMETRY_SCORE} — rejecting weak shape")
-                        continue
-                        
-                    tightness = valid_seq[-1]['depth']
-                    atr_multiples = tightness / max(atr_pct, 0.005)
+            num_contractions = len(best_run)
+            min_contractions = self.config.extras.get("min_contractions", 2)
+            if num_contractions < min_contractions:
+                if is_debug: print(f"Rejected - min contractions not met ({num_contractions} < {min_contractions})")
+                return None
+                
+            max_contractions = self.config.extras.get("max_contractions", 4)
+            if num_contractions > max_contractions:
+                best_run = best_run[-max_contractions:]
+                num_contractions = max_contractions
+                
+            def validate_contracting_highs(cndls, conts, piv_idx):
+                seg_highs = []
+                for i in range(len(conts)):
+                    s_idx = conts[i - 1]["index"] if i > 0 else piv_idx
+                    e_idx = conts[i]["index"]
+                    if e_idx <= s_idx:
+                        return False, f"malformed segment i={i}"
+                    seg = cndls[s_idx:e_idx + 1]
+                    if not seg:
+                        return False, f"empty segment i={i}"
+                    seg_high = max(c.high for c in seg)
+                    seg_highs.append(seg_high)
+                for i in range(1, len(seg_highs)):
+                    if seg_highs[i] >= seg_highs[i - 1]:
+                        return False, f"highs not contracting: {seg_highs[i]} >= {seg_highs[i-1]}"
+                return True, ""
 
-                    if atr_multiples <= 1.0:
-                        tightness_score = 100
-                    elif atr_multiples <= 2.0:
-                        tightness_score = 100 - (atr_multiples - 1.0) * 30
-                    elif atr_multiples <= 4.0:
-                        tightness_score = 70 - (atr_multiples - 2.0) * 15
-                    else:
-                        tightness_score = max(10, 40 - (atr_multiples - 4.0) * 10)
+            ok, reason = validate_contracting_highs(candles, best_run, pivot_idx)
+            if not ok:
+                if is_debug: print(f"Rejected - validate_contracting_highs failed: {reason}")
+                return None
+                
+            first_depth = best_run[0]["depth_pct"]
+            final_depth = best_run[-1]["depth_pct"]
+            
+            first_pullback_min_depth = self.config.extras.get("first_pullback_min_depth", 8.0)
+            if first_depth < first_pullback_min_depth or first_depth > first_pullback_max_depth:
+                if is_debug: print(f"Rejected - first pullback depth {first_depth:.2f} out of range ({first_pullback_min_depth}-{first_pullback_max_depth})")
+                return None
+                
+            final_pullback_max_depth = self.config.extras.get("final_pullback_max_depth", 15.0)
+            if final_depth > final_pullback_max_depth:
+                if is_debug: print(f"Rejected - final pullback depth {final_depth:.2f} > {final_pullback_max_depth}")
+                return None
+                
+            min_candles_between = self.config.extras.get("min_candles_between_pullbacks", 3)
+            min_recovery_pct = self.config.extras.get("min_recovery_pct", 50.0)
+            
+            for i in range(len(best_run) - 1):
+                low1_idx = best_run[i]["index"]
+                low2_idx = best_run[i + 1]["index"]
+                if low2_idx - low1_idx < min_candles_between:
+                    if is_debug: print(f"Rejected - min candles between pullbacks failed ({low2_idx - low1_idx} < {min_candles_between})")
+                    return None
                     
-                    strength = (geometry_score + tightness_score) / 2.0
+                between_high = max(candles[k].high for k in range(low1_idx + 1, low2_idx))
+                pullback_range = pivot_price - best_run[i]["low"]
+                if pullback_range <= 0:
+                    return None
                     
-                    # Actionability bonus
-                    if -2.0 <= distance_pct <= 2.0:
-                        strength += 10
-                        
-                    strength = max(0.0, min(strength, 100.0))
+                recovery_pct = (between_high - best_run[i]["low"]) / pullback_range * 100
+                if recovery_pct < min_recovery_pct:
+                    if is_debug: print(f"Rejected - recovery {recovery_pct:.1f}% < {min_recovery_pct}%")
+                    return None
+                    
+            vol_dry_up_tolerance = self.config.extras.get("vol_dry_up_tolerance", 1.05)
+            for i in range(1, len(best_run)):
+                current_trough_vol = best_run[i]["avg_vol"]
+                previous_trough_vol = best_run[i - 1]["avg_vol"]
+                if current_trough_vol > previous_trough_vol * vol_dry_up_tolerance:
+                    if is_debug: print(f"Rejected - volume did not dry up ({current_trough_vol} > {previous_trough_vol * vol_dry_up_tolerance})")
+                    return None
+                    
+            def check_right_side_accumulation(cndls, window=12, min_ratio=1.25):
+                recent = cndls[-window:]
+                up_day_volumes = [c.volume for c in recent if c.close > c.open]
+                down_day_volumes = [c.volume for c in recent if c.close <= c.open]
+                if len(up_day_volumes) < 3 or len(down_day_volumes) < 3:
+                    return None, 0, 0
+                avg_up_vol = sum(up_day_volumes) / len(up_day_volumes)
+                avg_down_vol = sum(down_day_volumes) / len(down_day_volumes)
+                return avg_up_vol >= avg_down_vol * min_ratio, avg_up_vol, avg_down_vol
 
-                    signal = PatternSignal(
-                        name="VCP",
-                        strength=strength,
-                        buy_point=round(buy_point, 2),
-                        distance_from_buy_pct=round(distance_pct, 2),
-                        breakout_level=round(buy_point, 2),
-                        pivot_high=round(base_high_val, 2),
-                        contraction_depth=round(valid_seq[-1]['depth'] * 100, 2),
-                        contraction_count=len(valid_seq),
-                    )
-                    
-                    if best_signal is None or signal.strength > best_signal.strength:
-                        best_signal = signal
+            accumulation_result, up_vol, down_vol = check_right_side_accumulation(candles, window=12)
+            if accumulation_result is False:
+                if is_debug: print(f"Rejected - right side accumulation failed. Up: {up_vol}, Down: {down_vol}")
+                return None
 
-            return best_signal
+            # Scoring based on geometry and tightness
+            geometry_score = 100
+            for i in range(len(best_run) - 1):
+                ratio = best_run[i+1]['depth_pct'] / best_run[i]['depth_pct']
+                if ratio <= 1.0:
+                    adjustment = 15 - ((ratio - 0.5) / 0.5) * 27
+                    geometry_score += adjustment
+                else:
+                    geometry_score -= 25
+                    
+            tightness = final_depth / 100.0  # convert back to ratio
+            atr_multiples = tightness / max(atr_pct, 0.005)
+
+            if atr_multiples <= 1.0:
+                tightness_score = 100
+            elif atr_multiples <= 2.0:
+                tightness_score = 100 - (atr_multiples - 1.0) * 30
+            elif atr_multiples <= 4.0:
+                tightness_score = 70 - (atr_multiples - 2.0) * 15
+            else:
+                tightness_score = max(10, 40 - (atr_multiples - 4.0) * 10)
+            
+            strength = (geometry_score + tightness_score) / 2.0
+            
+            distance_pct = (current_price - pivot_price) / pivot_price * 100
+            if -2.0 <= distance_pct <= 2.0:
+                strength += 10
+                
+            strength = max(0.0, min(strength, 100.0))
+
+            if is_debug:
+                print(f"ACCEPTED! Symbol passed strict VCP checks. Score: {strength:.1f}")
+
+            signal = PatternSignal(
+                name="VCP",
+                strength=strength,
+                buy_point=round(pivot_price, 2),
+                distance_from_buy_pct=round(distance_pct, 2),
+                breakout_level=round(pivot_price, 2),
+                pivot_high=round(pivot_price, 2),
+                contraction_depth=round(final_depth, 2),
+                contraction_count=len(best_run),
+            )
+            
+            return signal
 
         except Exception as e:
-            if os.environ.get("DEBUG_VCP") == "1": print(f"Exception: {e}")
+            if os.environ.get("DEBUG_VCP") == "1": print(f"Exception in detect: {e}")
             return None
 
     def score(
@@ -227,4 +262,3 @@ class VCPPattern(BasePattern):
         2. Tight right side: The final contraction should be very shallow (< 8%).
         3. Actionability: Price should be tight against the breakout level, not extended.
         """
-
