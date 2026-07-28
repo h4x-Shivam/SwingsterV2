@@ -36,5 +36,10 @@ VCP_CONFIG = PatternConfig(
         "vol_dry_up_days": 10,
         "vol_dry_up_min_count": 1,
         "vol_dry_up_threshold": 0.7,
+        # Advanced VCP Metrics
+        "ma_squeeze_max_spread": 0.04,   # 4% max spread between 10,20,50 MAs
+        "avwap_buffer_pct": 0.98,        # Price must hold >= 98% of Anchored VWAP
+        "pocket_pivot_bonus": 5.0,       # Points added per pocket pivot on right side
+        "squat_candle_penalty": 10.0,    # Points deducted per squat candle on right side
     }
 )

@@ -2,6 +2,7 @@ from scanner.patterns.base import BasePattern
 from scanner.patterns.vcp.config import VCP_CONFIG
 from scanner.models import PatternSignal, Candle
 from scanner.patterns.pivots import calculate_atr_pct, find_swing_pivots
+from scanner.indicators import calculate_sma, calculate_ema, calculate_avwap
 from log import get_logger
 
 logger = get_logger(__name__)
@@ -89,7 +90,17 @@ class VCPPattern(BasePattern):
                 depth_contracting = curr["depth_pct"] < prev["depth_pct"]
                 ascending_low = curr["low"] > prev["low"]
                 
-                if depth_contracting and ascending_low:
+                # Time Contraction Check
+                if len(current_run) == 1:
+                    prev_duration = current_run[0]["index"] - pivot_idx
+                else:
+                    prev_duration = current_run[-1]["index"] - current_run[-2]["index"]
+                
+                curr_duration = curr["index"] - prev["index"]
+                # Allow a 20% leniency for market noise
+                time_contracting = curr_duration <= (prev_duration * 1.2)
+                
+                if depth_contracting and ascending_low and time_contracting:
                     current_run.append(curr)
                 else:
                     if len(current_run) > len(best_run):
@@ -244,6 +255,30 @@ class VCPPattern(BasePattern):
                     logger.debug(f"Rejected - not enough volume dry up days ({dry_days} < {vol_dry_up_min_count})")
                     return None
                     
+            # --- Advanced Strict Checks ---
+            
+            # Moving Average Convergence Squeeze
+            ma_squeeze_max_spread = self.config.extras.get("ma_squeeze_max_spread", 0.04)
+            ma10 = calculate_ema(candles, 10)
+            ma20 = calculate_ema(candles, 20)
+            ma50 = calculate_sma(candles, 50)
+            
+            if ma10 and ma20 and ma50:
+                max_ma = max(ma10, ma20, ma50)
+                min_ma = min(ma10, ma20, ma50)
+                ma_spread = (max_ma - min_ma) / current_price
+                if ma_spread > ma_squeeze_max_spread:
+                    logger.debug(f"Rejected - MAs not squeezed enough (spread {ma_spread:.3f} > {ma_squeeze_max_spread})")
+                    return None
+                    
+            # Anchored VWAP (AVWAP) from pivot high
+            avwap_buffer_pct = self.config.extras.get("avwap_buffer_pct", 0.98)
+            avwap = calculate_avwap(candles, pivot_idx)
+            if avwap:
+                if current_price < avwap * avwap_buffer_pct:
+                    logger.debug(f"Rejected - Price below Anchored VWAP ({current_price} < {avwap * avwap_buffer_pct})")
+                    return None
+            
             # --- End Strict Checks ---
 
             # Scoring based on geometry and tightness
@@ -268,16 +303,42 @@ class VCPPattern(BasePattern):
             else:
                 tightness_score = max(10, 40 - (atr_multiples - 4.0) * 10)
             
+            # Volume Footprint: Pocket Pivots & Squat Candles
+            pocket_pivot_bonus = self.config.extras.get("pocket_pivot_bonus", 5.0)
+            squat_candle_penalty = self.config.extras.get("squat_candle_penalty", 10.0)
+            
+            right_side_candles = candles[-15:]
+            pocket_pivots = 0
+            squat_candles = 0
+            
+            for i in range(10, len(right_side_candles)):
+                c = right_side_candles[i]
+                prior_10 = right_side_candles[i-10:i]
+                highest_down_vol = max([pc.volume for pc in prior_10 if pc.close < pc.open], default=0)
+                
+                # Pocket Pivot: Up day with volume higher than any down day in last 10 days
+                if c.close > c.open and c.volume > highest_down_vol:
+                    pocket_pivots += 1
+                    
+                # Squat Candle: High volume but poor close (bottom 40% of range)
+                c_range = c.high - c.low
+                if c_range > 0 and c.volume > avg_vol_50:
+                    close_pct = (c.close - c.low) / c_range
+                    if close_pct < 0.4:
+                        squat_candles += 1
+            
+            footprint_adjustment = (pocket_pivots * pocket_pivot_bonus) - (squat_candles * squat_candle_penalty)
+            
             strength = (geometry_score + tightness_score) / 2.0
             
             distance_pct = (current_price - pivot_price) / pivot_price * 100
             if -2.0 <= distance_pct <= 2.0:
                 strength += 10
                 
+            strength += footprint_adjustment
             strength = max(0.0, min(strength, 100.0))
 
-            if is_debug:
-                print(f"ACCEPTED! Symbol passed strict VCP checks. Score: {strength:.1f}")
+            logger.debug(f"ACCEPTED! Symbol passed strict VCP checks. Score: {strength:.1f}")
 
             signal = PatternSignal(
                 name="VCP",
