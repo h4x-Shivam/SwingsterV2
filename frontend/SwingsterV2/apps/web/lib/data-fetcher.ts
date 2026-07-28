@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 
 import { ScanSummary, FinalPick } from "./generated-types";
 
+export type { ScanSummary, FinalPick };
+
 // Adding timestamp to ScanSummary locally since it's added by Supabase default
 export interface ScanSummaryWithTimestamp extends ScanSummary {
   timestamp: string;
