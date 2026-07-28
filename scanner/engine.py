@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sqlite3
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -20,10 +19,9 @@ from typing import Optional
 
 from config import (
     NUM_AGENTS,
-    STAGE2_MIN_SCORE,
     WORKER_COUNT,
     SCAN_MODES,
-    SCAN_MODE,
+    DEFAULT_SCAN_MODE,
     MIN_CANDIDATE_SCORE,
     MAX_CANDIDATES,
 )
@@ -32,7 +30,6 @@ from fetcher.db_writer import (
     read_ohlcv_batch,
     get_eligible_symbols,
     get_prefilter_counts,
-    get_connection,
 )
 
 from scanner.models import Candle, ScanResult, rows_to_candles
@@ -44,7 +41,9 @@ from scanner.rs_rank import compute_rs
 from scanner.risk_reward import compute_risk_reward
 
 
-logger = logging.getLogger(__name__)
+from log import get_logger
+
+logger = get_logger(__name__)
 
 class RejectedRRError(Exception):
     pass
@@ -58,9 +57,9 @@ class RejectedRRError(Exception):
 
 def scan_symbol(
     symbol: str,
-    conn: Optional[sqlite3.Connection] = None,
+    conn=None,
     nifty_candles: Optional[list[Candle]] = None,
-    mode: str = "ALL",
+    mode: str = DEFAULT_SCAN_MODE,
     preloaded_rows: Optional[list[tuple]] = None,
 ) -> Optional[ScanResult]:
     """
@@ -87,15 +86,10 @@ def scan_symbol(
     # get active patterns for this mode
     active_patterns = get_patterns(mode)
 
-    MIN_CANDLES = {
-        "VCP": 60,
-        "FLAG_POLE": 60,
-        "CUP_HANDLE": 100,
-        "BREAKOUT": 75
-    }
+    # Filter by minimum candle requirement (from each pattern's config)
     active_patterns = [
         p for p in active_patterns
-        if len(candles) >= MIN_CANDLES.get(p.config.name, 60)
+        if len(candles) >= p.config.min_candles
     ]
     
     if not active_patterns:
@@ -103,15 +97,10 @@ def scan_symbol(
 
     trend = analyze_trend(candles)
     
-    STAGE2_MIN_SCORE_DICT = {
-        "VCP": 0,
-        "FLAG_POLE": 55,
-        "CUP_HANDLE": 45,
-        "BREAKOUT": 60
-    }
+    # Filter by Stage 2 minimum score (from each pattern's config)
     active_patterns = [
         p for p in active_patterns
-        if trend.stage2_score >= STAGE2_MIN_SCORE_DICT.get(p.config.name, 60)
+        if trend.stage2_score >= p.config.stage2_min_score
     ]
     
     if not active_patterns:
@@ -126,13 +115,8 @@ def scan_symbol(
     # for ALL mode: use the strictest min_signal_score across patterns
     min_score = min(p.config.min_signal_score for p in active_patterns)
 
-    PIVOT_LOOKBACK = {
-        "VCP": 120,
-        "FLAG_POLE": 60,
-        "CUP_HANDLE": 252,
-        "BREAKOUT": 75
-    }
-    max_lookback = max(PIVOT_LOOKBACK.get(p.config.name, 120) for p in active_patterns)
+    # Pivot lookback — use the widest window needed across active patterns
+    max_lookback = max(p.config.pivot_lookback for p in active_patterns)
     pivots = find_swing_pivots(candles, lookback=max_lookback)
 
     # run detectors — only for active patterns
@@ -276,26 +260,19 @@ def scan_all(
     cpu_cores = os.cpu_count() or 1
 
     # 3.3 Startup diagnostic log
-    print("\n" + "-" * 49)
-    print("-- SwingsterV2 Scan Engine ----------------------")
-    print(f"CPU cores available  : {cpu_cores}")
-    print(f"Workers to be used   : {actual_workers}")
-    print(f"Eligible symbols     : {len(eligible_symbols)}")
-    print(f"Batch size per worker: ~{batch_size}")
-    print(f"Fetching data        : Remote PostgreSQL (Sequential)")
-    print("-" * 49 + "\n")
-    sys.stdout.flush()
+    logger.info("Scan Engine starting")
+    logger.info("CPU cores: %d | Workers: %d | Eligible: %d | Batch size: ~%d",
+                cpu_cores, actual_workers, len(eligible_symbols), batch_size)
+    logger.info("Data source: Remote PostgreSQL (Sequential)")
 
     # Pre-fetch Nifty candles
     nifty_candles = rows_to_candles(nifty_rows) if nifty_rows else []
 
     # Fetch ALL data in the parent process
     t_fetch_start = time.perf_counter()
-    print("Fetching OHLCV data for eligible symbols from PostgreSQL...")
-    sys.stdout.flush()
+    logger.info("Fetching OHLCV data for eligible symbols from PostgreSQL...")
     all_batch_data = read_ohlcv_batch(eligible_symbols)
-    print(f"Data fetch complete in {time.perf_counter() - t_fetch_start:.1f}s")
-    sys.stdout.flush()
+    logger.info("Data fetch complete in %.1fs", time.perf_counter() - t_fetch_start)
 
     # 2.6 Batch splitting strategy using round-robin slice
     batches = [eligible_symbols[i::actual_workers] for i in range(actual_workers)]
@@ -330,12 +307,11 @@ def scan_all(
                     try:
                         progress_callback(total_scanned, total_eligible, results)
                     except Exception as cb_err:
-                        print(f"[WARN] Progress callback error: {cb_err}", file=sys.stderr)
-                # 3.6 Update progress log inside scan_all() to include active mode
-                print(f"Progress: {total_scanned}/{total_eligible} | {len(results)} {mode} candidates found")
-                sys.stdout.flush()
+                        logger.warning("Progress callback error: %s", cb_err)
+                logger.info("Progress: %d/%d | %d %s candidates found",
+                            total_scanned, total_eligible, len(results), mode)
     except KeyboardInterrupt:
-        print("\nScan interrupted by user.")
+        logger.warning("Scan interrupted by user.")
         if executor is not None:
             executor.shutdown(wait=False, cancel_futures=True)
         raise
@@ -361,20 +337,10 @@ def scan_all(
 
     elapsed = time.perf_counter() - t0
 
-    # 3.7 Add final summary log after all futures complete (ASCII safe)
-    print(f"\nScan complete - mode: {mode} | "
-          f"{total_eligible} scanned | "
-          f"{count_pattern} matches -> "
-          f"top {len(results)} sent to judge")
-    sys.stdout.flush()
-
     logger.info(
-        "Scan complete | Scanned: %d | Patterns found: %d | "
+        "Scan complete | mode: %s | Scanned: %d | Patterns found: %d | "
         "Candidates: %d | Time: %.1fs",
-        total_eligible,
-        count_pattern,
-        len(results),
-        elapsed,
+        mode, total_eligible, count_pattern, len(results), elapsed,
     )
 
     return results, prefilter["total"], count_pattern, rejected_rr_list

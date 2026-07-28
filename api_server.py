@@ -1,3 +1,4 @@
+import json
 import os
 import asyncio
 from fastapi import FastAPI, Query
@@ -27,8 +28,6 @@ async def run_scan_generator(mode: str):
         # Decode and format as JSON string to match frontend expectations
         decoded_line = line.decode('utf-8').strip()
         if decoded_line:
-            # We wrap it in quotes manually or use json.dumps to match the frontend parser
-            import json
             yield f"data: {json.dumps(decoded_line)}\n\n"
     
     # Wait for the process to finish

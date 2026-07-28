@@ -1,28 +1,35 @@
+import logging
+import threading
+
 import requests
 import time
 import yfinance as yf
 
-# Global persistent session for NSE requests
+logger = logging.getLogger(__name__)
+
+# Global persistent session for NSE requests — protected by lock
 _nse_session = None
+_nse_lock = threading.Lock()
 
 def _get_nse_session():
     global _nse_session
-    if _nse_session is None:
-        _nse_session = requests.Session()
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-            "Accept": "application/json",
-            "Accept-Language": "en-US,en;q=0.9",
-            "Referer": "https://www.nseindia.com/",
-            "Connection": "keep-alive"
-        }
-        _nse_session.headers.update(headers)
-        try:
-            _nse_session.get("https://www.nseindia.com", timeout=12)
-            time.sleep(0.5)
-        except Exception as e:
-            print(f"[NSE] Failed to establish session cookies: {e}")
-    return _nse_session
+    with _nse_lock:
+        if _nse_session is None:
+            _nse_session = requests.Session()
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+                "Accept": "application/json",
+                "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://www.nseindia.com/",
+                "Connection": "keep-alive"
+            }
+            _nse_session.headers.update(headers)
+            try:
+                _nse_session.get("https://www.nseindia.com", timeout=12)
+                time.sleep(0.5)
+            except Exception as e:
+                logger.warning("[NSE] Failed to establish session cookies: %s", e)
+        return _nse_session
 
 def _clean_symbol(symbol: str) -> str:
     return symbol.replace(".NS", "").replace(".NSE", "").upper().strip()
@@ -200,10 +207,9 @@ def fetch_from_nse(symbol: str, timeout: int = 5) -> dict:
                         data["fii_holding_pct"] = latest.get("foreignInstInvestors", None)
                         data["pledge_pct"] = latest.get("pledgedEncumbered")
             except Exception:
-                pass
+                logger.debug("Failed to parse shareholding data for %s", symbol)
     except Exception as e:
-        print(f"[NSE Fallback] {symbol} error: {e}")
-        pass
+        logger.warning("[NSE Fallback] %s error: %s", symbol, e)
     return data
 
 

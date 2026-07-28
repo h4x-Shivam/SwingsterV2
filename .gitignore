@@ -20,3 +20,7 @@ data/results.json
 
 # Agent / Gemini internal state
 .agent/
+
+# SQLite
+*.db
+*.sqlite3

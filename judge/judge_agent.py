@@ -88,7 +88,7 @@ def run_judge(candidates: list[dict], mode: str = "ALL") -> list[dict]:
 
     elapsed = time.perf_counter() - start
     logger.info(f"Auto-Judge finished in {elapsed:.3f}s | Returned {len(all_results)} picks")
-    print(f"Auto-Judge complete — {len(all_results)} picks in {elapsed:.3f}s")
+    logger.info("Auto-Judge complete — %d picks in %.3fs", len(all_results), elapsed)
     
     return all_results
 

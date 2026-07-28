@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type { ScanSummary, FinalPick } from "@/lib/data-fetcher";
+import type { ScanSummaryWithTimestamp, FinalPick } from "@/lib/data-fetcher";
 import { motion, AnimatePresence } from "motion/react";
 import { BarChart3, TrendingUp, Target, Search, XCircle, Copy, Check } from "lucide-react";
 
@@ -9,7 +9,7 @@ export function DashboardHeader({
   summary,
   picks
 }: {
-  summary: ScanSummary | null;
+  summary: ScanSummaryWithTimestamp | null;
   picks: FinalPick[];
 }) {
   const [dropdownOpen, setDropdownOpen] = useState<"matches" | "rejected" | null>(null);

@@ -43,12 +43,16 @@ class PatternConfig:
     # Volume direction
     vol_contraction_required:  bool
 
+    # Engine pipeline thresholds (moved from hardcoded dicts in engine.py)
+    stage2_min_score:          int = 60    # minimum stage2_score to run this pattern
+    pivot_lookback:            int = 120   # lookback window for swing pivot detection
+
     # Scoring weights — must sum to 1.0
-    weight_signal:  float
-    weight_volume:  float
-    weight_rr:      float
-    weight_stage2:  float
-    weight_rs:      float
+    weight_signal:  float = 0.0
+    weight_volume:  float = 0.0
+    weight_rr:      float = 0.0
+    weight_stage2:  float = 0.0
+    weight_rs:      float = 0.0
 
     # Pattern-specific extras
     extras: Dict[str, Any] = field(default_factory=dict)
@@ -180,14 +184,6 @@ class ScanResult:
 
 
 
-# ---------------------------------------------------------------------------
-# Candle-count guards per pattern
-# ---------------------------------------------------------------------------
-
-MIN_CANDLES_VCP = 60
-MIN_CANDLES_FLAG = 30
-MIN_CANDLES_CUP = 100
-MIN_CANDLES_BREAKOUT = 30
 
 
 # ---------------------------------------------------------------------------

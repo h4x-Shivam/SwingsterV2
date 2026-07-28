@@ -1,41 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 
-export interface ScanSummary {
-  mode: string;
-  total_scanned: number;
-  pattern_match_count: number;
-  rejected_by_rr: string[];
+import { ScanSummary, FinalPick } from "./generated-types";
+
+// Adding timestamp to ScanSummary locally since it's added by Supabase default
+export interface ScanSummaryWithTimestamp extends ScanSummary {
   timestamp: string;
 }
 
-export interface FinalPick {
-  rank: number;
-  symbol: string;
-  pattern: string;
-  scan_mode: string;
-  composite_score: number;
-  conviction: "HIGH" | "MEDIUM";
-  buy_point: number;
-  stop_loss: number;
-  target: number;
-  rr_ratio: number;
-  current_price: number;
-  distance_from_buy_pct: number;
-  signal_strength: number;
-  volume_score: number;
-  rr_score: number;
-  stage2_score: number;
-  rs_score: number;
-  judge_verdict: string;
-  flags: string;
-  pledge_pct?: number | null;
-  sector?: string;
-  target2?: number;
-  pattern_age?: number;
-  trend?: string;
-}
-
-export async function getScanSummary(): Promise<ScanSummary | null> {
+export async function getScanSummary(): Promise<ScanSummaryWithTimestamp | null> {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -49,7 +21,7 @@ export async function getScanSummary(): Promise<ScanSummary | null> {
       console.error("Failed to read scan_summary from Supabase:", error?.message);
       return null;
     }
-    return data as ScanSummary;
+    return data as ScanSummaryWithTimestamp;
   } catch (error) {
     console.error("Failed to read scan_summary", error);
     return null;

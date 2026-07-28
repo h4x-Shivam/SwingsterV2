@@ -60,7 +60,7 @@ WORKER_COUNT = max(1, min(NUM_AGENTS, (os.cpu_count() or 2) - 1))
 
 # Pattern scan modes
 SCAN_MODES = ["VCP", "FLAG_POLE", "CUP_HANDLE", "BREAKOUT", "ALL"]
-SCAN_MODE  = "VCP"   # default mode — change per run
+DEFAULT_SCAN_MODE  = "VCP"   # default mode — change per run
 
 MIN_CANDIDATE_SCORE = 50.0     # fallback for ALL mode
 MAX_CANDIDATES = 20            # fallback pool size for ALL mode

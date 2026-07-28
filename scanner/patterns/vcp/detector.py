@@ -2,7 +2,9 @@ from scanner.patterns.base import BasePattern
 from scanner.patterns.vcp.config import VCP_CONFIG
 from scanner.models import PatternSignal, Candle
 from scanner.patterns.pivots import calculate_atr_pct, find_swing_pivots
-import os
+from log import get_logger
+
+logger = get_logger(__name__)
 
 class VCPPattern(BasePattern):
 
@@ -13,7 +15,6 @@ class VCPPattern(BasePattern):
             if not self.is_eligible(candles):
                 return None
 
-            is_debug = os.environ.get("DEBUG_VCP") == "1"
             current_price = candles[-1].close
             atr_pct = calculate_atr_pct(candles)
             
@@ -27,7 +28,7 @@ class VCPPattern(BasePattern):
             recent_highs = [sh for sh in swing_highs if sh.index >= lookback_start]
             
             if not recent_highs:
-                if is_debug: print(f"Rejected - no recent highs found in lookback {lookback}")
+                logger.debug(f"Rejected - no recent highs found in lookback {lookback}")
                 return None
                 
             pivot = max(recent_highs, key=lambda h: h.price)
@@ -36,22 +37,22 @@ class VCPPattern(BasePattern):
             
             min_candles_post_pivot = self.config.extras.get("min_candles_post_pivot", 10)
             if len(candles) - 1 - pivot_idx < min_candles_post_pivot:
-                if is_debug: print(f"Rejected - not enough candles after pivot ({len(candles) - 1 - pivot_idx} < {min_candles_post_pivot})")
+                logger.debug(f"Rejected - not enough candles after pivot ({len(candles) - 1 - pivot_idx} < {min_candles_post_pivot})")
                 return None
                 
             pivot_proximity_bottom = self.config.extras.get("pivot_proximity_bottom", 0.80)
             if current_price < pivot_price * pivot_proximity_bottom:
-                if is_debug: print(f"Rejected - price too far below pivot ({current_price} < {pivot_price * pivot_proximity_bottom})")
+                logger.debug(f"Rejected - price too far below pivot ({current_price} < {pivot_price * pivot_proximity_bottom})")
                 return None
                 
             pivot_proximity_top = self.config.extras.get("pivot_proximity_top", 1.03)
             if current_price > pivot_price * pivot_proximity_top:
-                if is_debug: print(f"Rejected - price extended above pivot ({current_price} > {pivot_price * pivot_proximity_top})")
+                logger.debug(f"Rejected - price extended above pivot ({current_price} > {pivot_price * pivot_proximity_top})")
                 return None
                 
             post_pivot_lows = [sl for sl in swing_lows if sl.index > pivot_idx]
             if len(post_pivot_lows) < 2:
-                if is_debug: print(f"Rejected - not enough post-pivot lows (found {len(post_pivot_lows)})")
+                logger.debug(f"Rejected - not enough post-pivot lows (found {len(post_pivot_lows)})")
                 return None
                 
             first_pullback_max_depth = self.config.extras.get("first_pullback_max_depth", 35.0)
@@ -76,7 +77,7 @@ class VCPPattern(BasePattern):
                 })
                 
             if len(pullbacks) < 2:
-                if is_debug: print(f"Rejected - not enough valid pullbacks (found {len(pullbacks)})")
+                logger.debug(f"Rejected - not enough valid pullbacks (found {len(pullbacks)})")
                 return None
                 
             best_run = []
@@ -101,7 +102,7 @@ class VCPPattern(BasePattern):
             num_contractions = len(best_run)
             min_contractions = self.config.extras.get("min_contractions", 2)
             if num_contractions < min_contractions:
-                if is_debug: print(f"Rejected - min contractions not met ({num_contractions} < {min_contractions})")
+                logger.debug(f"Rejected - min contractions not met ({num_contractions} < {min_contractions})")
                 return None
                 
             max_contractions = self.config.extras.get("max_contractions", 4)
@@ -128,7 +129,7 @@ class VCPPattern(BasePattern):
 
             ok, reason = validate_contracting_highs(candles, best_run, pivot_idx)
             if not ok:
-                if is_debug: print(f"Rejected - validate_contracting_highs failed: {reason}")
+                logger.debug(f"Rejected - validate_contracting_highs failed: {reason}")
                 return None
                 
             first_depth = best_run[0]["depth_pct"]
@@ -136,12 +137,12 @@ class VCPPattern(BasePattern):
             
             first_pullback_min_depth = self.config.extras.get("first_pullback_min_depth", 8.0)
             if first_depth < first_pullback_min_depth or first_depth > first_pullback_max_depth:
-                if is_debug: print(f"Rejected - first pullback depth {first_depth:.2f} out of range ({first_pullback_min_depth}-{first_pullback_max_depth})")
+                logger.debug(f"Rejected - first pullback depth {first_depth:.2f} out of range ({first_pullback_min_depth}-{first_pullback_max_depth})")
                 return None
                 
             final_pullback_max_depth = self.config.extras.get("final_pullback_max_depth", 15.0)
             if final_depth > final_pullback_max_depth:
-                if is_debug: print(f"Rejected - final pullback depth {final_depth:.2f} > {final_pullback_max_depth}")
+                logger.debug(f"Rejected - final pullback depth {final_depth:.2f} > {final_pullback_max_depth}")
                 return None
                 
             min_candles_between = self.config.extras.get("min_candles_between_pullbacks", 3)
@@ -151,7 +152,7 @@ class VCPPattern(BasePattern):
                 low1_idx = best_run[i]["index"]
                 low2_idx = best_run[i + 1]["index"]
                 if low2_idx - low1_idx < min_candles_between:
-                    if is_debug: print(f"Rejected - min candles between pullbacks failed ({low2_idx - low1_idx} < {min_candles_between})")
+                    logger.debug(f"Rejected - min candles between pullbacks failed ({low2_idx - low1_idx} < {min_candles_between})")
                     return None
                     
                 between_high = max(candles[k].high for k in range(low1_idx + 1, low2_idx))
@@ -161,7 +162,7 @@ class VCPPattern(BasePattern):
                     
                 recovery_pct = (between_high - best_run[i]["low"]) / pullback_range * 100
                 if recovery_pct < min_recovery_pct:
-                    if is_debug: print(f"Rejected - recovery {recovery_pct:.1f}% < {min_recovery_pct}%")
+                    logger.debug(f"Rejected - recovery {recovery_pct:.1f}% < {min_recovery_pct}%")
                     return None
                     
             vol_dry_up_tolerance = self.config.extras.get("vol_dry_up_tolerance", 1.05)
@@ -169,7 +170,7 @@ class VCPPattern(BasePattern):
                 current_trough_vol = best_run[i]["avg_vol"]
                 previous_trough_vol = best_run[i - 1]["avg_vol"]
                 if current_trough_vol > previous_trough_vol * vol_dry_up_tolerance:
-                    if is_debug: print(f"Rejected - volume did not dry up ({current_trough_vol} > {previous_trough_vol * vol_dry_up_tolerance})")
+                    logger.debug(f"Rejected - volume did not dry up ({current_trough_vol} > {previous_trough_vol * vol_dry_up_tolerance})")
                     return None
                     
             def check_right_side_accumulation(cndls, window=12, min_ratio=1.25):
@@ -184,8 +185,66 @@ class VCPPattern(BasePattern):
 
             accumulation_result, up_vol, down_vol = check_right_side_accumulation(candles, window=12)
             if accumulation_result is False:
-                if is_debug: print(f"Rejected - right side accumulation failed. Up: {up_vol}, Down: {down_vol}")
+                logger.debug(f"Rejected - right side accumulation failed. Up: {up_vol}, Down: {down_vol}")
                 return None
+            # --- Strict Tightness and Volume Checks ---
+            
+            # 1. Price Tightness (Right Side Range)
+            rs_range_days = self.config.extras.get("right_side_range_days", 15)
+            rs_max_range_pct = self.config.extras.get("right_side_max_range_pct", 1.08)
+            recent_candles = candles[-rs_range_days:]
+            if len(recent_candles) >= rs_range_days:
+                rs_high = max(c.high for c in recent_candles)
+                rs_low = min(c.low for c in recent_candles)
+                if rs_low > 0:
+                    rs_range = rs_high / rs_low
+                    if rs_range > rs_max_range_pct:
+                        logger.debug(f"Rejected - right side range too wide ({rs_range:.3f} > {rs_max_range_pct})")
+                        return None
+                        
+            # 2. ATR Contraction
+            atr_ratio_threshold = self.config.extras.get("atr_contraction_ratio", 0.5)
+            def get_atr(cndls, period):
+                if len(cndls) < period + 1: return 0.0
+                tr_sum = 0.0
+                for j in range(len(cndls)-period, len(cndls)):
+                    h = cndls[j].high
+                    l = cndls[j].low
+                    pc = cndls[j-1].close
+                    tr = max(h - l, abs(h - pc), abs(l - pc))
+                    tr_sum += tr
+                return tr_sum / period
+
+            atr_5 = get_atr(candles, 5)
+            atr_20 = get_atr(candles, 20)
+            if atr_20 > 0:
+                atr_ratio = atr_5 / atr_20
+                if atr_ratio > atr_ratio_threshold:
+                    logger.debug(f"Rejected - ATR not contracting enough ({atr_ratio:.3f} > {atr_ratio_threshold})")
+                    return None
+                    
+            # 3 & 4. Volume Contraction and Dry-Up Count
+            vol_dry_up_days = self.config.extras.get("vol_dry_up_days", 10)
+            vol_dry_up_min_count = self.config.extras.get("vol_dry_up_min_count", 3)
+            vol_dry_up_threshold = self.config.extras.get("vol_dry_up_threshold", 0.5)
+            
+            if len(candles) >= 50:
+                avg_vol_50 = sum(c.volume for c in candles[-50:]) / 50.0
+                avg_vol_5 = sum(c.volume for c in candles[-5:]) / 5.0
+                
+                # Check if short-term volume is less than long-term volume
+                if avg_vol_5 > avg_vol_50:
+                    logger.debug(f"Rejected - 5d vol > 50d vol ({avg_vol_5} > {avg_vol_50})")
+                    return None
+                    
+                # Count dry up days
+                recent_vols = [c.volume for c in candles[-vol_dry_up_days:]]
+                dry_days = sum(1 for v in recent_vols if v < (avg_vol_50 * vol_dry_up_threshold))
+                if dry_days < vol_dry_up_min_count:
+                    logger.debug(f"Rejected - not enough volume dry up days ({dry_days} < {vol_dry_up_min_count})")
+                    return None
+                    
+            # --- End Strict Checks ---
 
             # Scoring based on geometry and tightness
             geometry_score = 100
@@ -233,8 +292,8 @@ class VCPPattern(BasePattern):
             
             return signal
 
-        except Exception as e:
-            if os.environ.get("DEBUG_VCP") == "1": print(f"Exception in detect: {e}")
+        except Exception:
+            logger.debug("VCP detection failed", exc_info=True)
             return None
 
     def score(

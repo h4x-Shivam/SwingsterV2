@@ -2,17 +2,25 @@
 db_writer.py — PostgreSQL persistence layer for OHLCV data.
 
 Handles:
+  • Connection pooling via ThreadedConnectionPool.
   • Creating / migrating the ohlcv table and indexes.
   • Upserting rows via INSERT ON CONFLICT (safe for delta fetches).
   • Reading OHLCV data back for a given symbol.
 """
 
+import logging
 import os
-import psycopg2
-from psycopg2.extras import execute_values
+import time
+from contextlib import contextmanager
 from typing import Optional
 
+import psycopg2
+from psycopg2.extras import execute_values
+from psycopg2.pool import ThreadedConnectionPool
+
 from config import DATABASE_URL
+
+logger = logging.getLogger(__name__)
 
 # ---------------------------------------------------------------------------
 # Schema
@@ -37,30 +45,97 @@ CREATE INDEX IF NOT EXISTS idx_ohlcv_symbol ON ohlcv (symbol);
 
 
 # ---------------------------------------------------------------------------
-# Connection helpers
+# Connection Pool
 # ---------------------------------------------------------------------------
+
+_pool: Optional[ThreadedConnectionPool] = None
+
+
+def _get_pool(db_url: str = DATABASE_URL) -> ThreadedConnectionPool:
+    """
+    Lazily initialize and return the global connection pool.
+
+    minconn=1  — one connection kept warm at all times.
+    maxconn=10 — enough for ProcessPool workers + main thread.
+    """
+    global _pool
+    if _pool is None or _pool.closed:
+        if not db_url:
+            raise ValueError("DATABASE_URL is not set. Please configure it in .env.")
+        _pool = ThreadedConnectionPool(minconn=1, maxconn=10, dsn=db_url)
+        logger.debug("Connection pool created (min=1, max=10)")
+    return _pool
+
 
 def get_connection(db_url: str = DATABASE_URL):
     """
-    Open the PostgreSQL database and return a connection.
-    """
-    if not db_url:
-        raise ValueError("DATABASE_URL is not set. Please configure it in .env.")
-    return psycopg2.connect(db_url)
+    Get a connection from the pool.
 
+    For backward compatibility, callers that manage their own connection
+    lifecycle can still use this directly. Prefer ``db_connection()``
+    context manager for new code.
+    """
+    return _get_pool(db_url).getconn()
+
+
+def release_connection(conn) -> None:
+    """Return a connection to the pool."""
+    try:
+        pool = _get_pool()
+        pool.putconn(conn)
+    except Exception:
+        # If pool is closed or conn is bad, just try to close it
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+@contextmanager
+def db_connection(db_url: str = DATABASE_URL):
+    """
+    Context manager for safe connection handling.
+
+    Automatically returns the connection to the pool on exit.
+    Usage::
+
+        with db_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT ...")
+    """
+    conn = get_connection(db_url)
+    try:
+        yield conn
+    finally:
+        release_connection(conn)
+
+
+def close_pool() -> None:
+    """
+    Close all connections in the pool.
+
+    Call this at application shutdown for clean teardown.
+    """
+    global _pool
+    if _pool is not None and not _pool.closed:
+        _pool.closeall()
+        logger.debug("Connection pool closed")
+    _pool = None
+
+
+# ---------------------------------------------------------------------------
+# Schema initialization
+# ---------------------------------------------------------------------------
 
 def init_db(db_url: str = DATABASE_URL) -> None:
     """
     Create the ohlcv table and index if they don't already exist.
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute(_CREATE_TABLE)
             cursor.execute(_CREATE_INDEX)
         conn.commit()
-    finally:
-        conn.close()
 
 
 # ---------------------------------------------------------------------------
@@ -70,7 +145,7 @@ def init_db(db_url: str = DATABASE_URL) -> None:
 def write_ohlcv(
     rows: list[tuple[str, str, float, float, float, float, int]],
     db_url: str = DATABASE_URL,
-    conn = None
+    conn=None,
 ) -> int:
     """
     Upsert a batch of OHLCV rows into the database.
@@ -83,11 +158,11 @@ def write_ohlcv(
     if not rows:
         return 0
 
-    should_close = False
-    if conn is None:
+    # Support callers that pass their own connection (e.g. fetch_all batching)
+    owns_conn = conn is None
+    if owns_conn:
         conn = get_connection(db_url)
-        should_close = True
-        
+
     try:
         with conn.cursor() as cursor:
             query = """
@@ -104,8 +179,8 @@ def write_ohlcv(
         conn.commit()
         return len(rows)
     finally:
-        if should_close:
-            conn.close()
+        if owns_conn:
+            release_connection(conn)
 
 
 # ---------------------------------------------------------------------------
@@ -115,17 +190,16 @@ def write_ohlcv(
 def read_ohlcv(
     symbol: str,
     db_url: str = DATABASE_URL,
-    conn = None,
+    conn=None,
 ) -> list[tuple[str, float, float, float, float, int]]:
     """
     Read all OHLCV rows for a single symbol, ordered by date ascending.
 
     Returns a list of (date, open, high, low, close, volume) tuples.
     """
-    should_close = False
-    if conn is None:
+    owns_conn = conn is None
+    if owns_conn:
         conn = get_connection(db_url)
-        should_close = True
     try:
         with conn.cursor() as cursor:
             cursor.execute(
@@ -135,14 +209,14 @@ def read_ohlcv(
             )
             return cursor.fetchall()
     finally:
-        if should_close:
-            conn.close()
+        if owns_conn:
+            release_connection(conn)
 
 
 def read_ohlcv_batch(
     symbols: list[str],
     db_url: str = DATABASE_URL,
-    conn = None,
+    conn=None,
 ) -> dict[str, list[tuple[str, float, float, float, float, int]]]:
     """
     Read all OHLCV rows for a batch of symbols, ordered by symbol and date ascending.
@@ -152,10 +226,9 @@ def read_ohlcv_batch(
     if not symbols:
         return {}
 
-    should_close = False
-    if conn is None:
+    owns_conn = conn is None
+    if owns_conn:
         conn = get_connection(db_url)
-        should_close = True
         
     result = {sym: [] for sym in symbols}
     
@@ -184,15 +257,17 @@ def read_ohlcv_batch(
                 break
             except psycopg2.OperationalError as e:
                 conn.rollback()
-                print(f"[{os.getpid()}] Database OperationalError on batch {i}: {e}. Retrying {retries-1} more times...")
+                logger.warning(
+                    "[%d] Database OperationalError on batch %d: %s. Retrying %d more times...",
+                    os.getpid(), i, e, retries - 1,
+                )
                 retries -= 1
-                import time
                 time.sleep(2)
                 if retries == 0:
-                    raise e
+                    raise
                     
-    if should_close:
-        conn.close()
+    if owns_conn:
+        release_connection(conn)
     return result
 
 
@@ -200,13 +275,10 @@ def get_all_symbols(db_url: str = DATABASE_URL) -> list[str]:
     """
     Return a sorted list of all distinct symbols stored in the database.
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute("SELECT DISTINCT symbol FROM ohlcv ORDER BY symbol;")
             return [row[0] for row in cursor.fetchall()]
-    finally:
-        conn.close()
 
 
 def get_eligible_symbols(db_url: str = DATABASE_URL) -> list[str]:
@@ -217,8 +289,7 @@ def get_eligible_symbols(db_url: str = DATABASE_URL) -> list[str]:
     3. Latest close price >= 20.0
     4. Data freshness (last trade date within 7 days of UTC 'now')
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
@@ -233,16 +304,13 @@ def get_eligible_symbols(db_url: str = DATABASE_URL) -> list[str]:
                 """
             )
             return [row[0] for row in cursor.fetchall()]
-    finally:
-        conn.close()
 
 
 def get_prefilter_counts(db_url: str = DATABASE_URL) -> dict:
     """
     Returns a dictionary of counts for the pre-filter summary log.
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 """
@@ -260,8 +328,6 @@ def get_prefilter_counts(db_url: str = DATABASE_URL) -> dict:
             
             cursor.execute("SELECT TO_CHAR(NOW() - INTERVAL '7 days', 'YYYY-MM-DD');")
             threshold_dt = cursor.fetchone()[0]
-    finally:
-        conn.close()
         
     counts = {
         "total": len(rows),
@@ -294,21 +360,17 @@ def get_row_count(db_url: str = DATABASE_URL) -> int:
     """
     Return the total number of OHLCV rows in the database.
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute("SELECT COUNT(*) FROM ohlcv;")
             return cursor.fetchone()[0]
-    finally:
-        conn.close()
 
 
 def get_latest_date(symbol: str, db_url: str = DATABASE_URL) -> Optional[str]:
     """
     Return the most recent date string stored for a given symbol, or None.
     """
-    conn = get_connection(db_url)
-    try:
+    with db_connection(db_url) as conn:
         with conn.cursor() as cursor:
             cursor.execute(
                 "SELECT MAX(date) FROM ohlcv WHERE symbol = %s;",
@@ -316,5 +378,3 @@ def get_latest_date(symbol: str, db_url: str = DATABASE_URL) -> Optional[str]:
             )
             result = cursor.fetchone()
             return result[0] if result else None
-    finally:
-        conn.close()
