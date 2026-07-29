@@ -54,6 +54,35 @@ def find_swing_pivots(
 
     return highs, lows
 
+
+def find_swing_pivots_adaptive(
+    candles: list[Candle],
+    atr_pct: float,
+    lookback: int = 252,
+) -> tuple[list[SwingHigh], list[SwingLow]]:
+    """
+    ATR-normalized variant of ``find_swing_pivots``.
+
+    The neighbourhood size ``n`` is derived from the stock's own daily ATR
+    expressed as a percentage of price:
+
+    - Very tight stock  (ATR ≈ 0.5% → n = 4):  needs a wider neighbourhood to
+      avoid crowning every tiny bump as a swing high.
+    - Volatile stock   (ATR ≈ 3.0% → n = 2):  a narrower window is sufficient
+      because real pivots are naturally separated by large moves.
+
+    Formula:  n = clamp( round(0.01 / atr_pct), 2, 5 )
+
+    Falls back to ``n = 3`` when ``atr_pct`` is zero or unavailable.
+    """
+    if atr_pct > 0:
+        n = int(round(0.01 / atr_pct))
+        n = max(2, min(5, n))
+    else:
+        n = 3
+    return find_swing_pivots(candles, n=n, lookback=lookback)
+
+
 def calculate_atr_pct(candles: list, period: int = 14) -> float:
     """
     Average True Range as a PERCENTAGE of current price.
